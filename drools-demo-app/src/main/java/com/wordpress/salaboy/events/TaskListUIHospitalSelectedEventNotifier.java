@@ -39,7 +39,6 @@ public class TaskListUIHospitalSelectedEventNotifier implements WorldEventNotifi
         String text = "Hospital at "+x+" - "+y;
         
         emergencyFrame.getLblDirection().setText(text);
-        System.out.println("\t\tTaskListUIHospitalSelectedEventNotifier ("+this+") adding a new monitor panel");
         emergencyFrame.setEmergencyMonitorPanel(new EmergencyMonitorPanel(emergencyFrame));
         
         System.out.println("Hospital Selected = "+hospital.toString());

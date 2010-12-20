@@ -207,7 +207,6 @@ public class CityMapUI extends BasicGame {
             if (randomx == 1 && randomy == 25) {
                 randomx = 19;
             }
-            System.out.println("x = " + xs[randomx] + " -> y =" + ys[randomy]);
             Call call = new Call(randomx, randomy, new Date(System.currentTimeMillis()));
             int callSquare[] = {1, 1, 31, 1, 31, 31, 1, 31};
             BlockMap.emergencies.add(new Block(xs[call.getX()] * 16, ys[call.getY()] * 16, callSquare, "callId:" + call.getId()));

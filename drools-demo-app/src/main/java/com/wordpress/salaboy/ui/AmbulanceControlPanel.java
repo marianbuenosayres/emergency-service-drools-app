@@ -150,7 +150,6 @@ public class AmbulanceControlPanel extends javax.swing.JPanel implements Refresh
     }// </editor-fold>//GEN-END:initComponents
 
     private void ambulanceControlsJTablerowClick(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ambulanceControlsJTablerowClick
-        //System.out.println("ID from EVT"+evt.getID());
         int selected = ambulanceControlsJTable.rowAtPoint(evt.getPoint());
         Long id = Long.parseLong(ambulanceControlsJTable.getModel().getValueAt(selected, 0).toString());
         this.ambulanceSelected(id);
@@ -206,11 +205,9 @@ public class AmbulanceControlPanel extends javax.swing.JPanel implements Refresh
             this.parent.getTaskClient().getTask(taskSum.getId(), handlerT);
             Task task2 = handlerT.getTask();
             TaskData taskData = task2.getTaskData();
-            //System.out.println("TaskData = " + taskData);
             BlockingGetContentResponseHandler handlerC = new BlockingGetContentResponseHandler();
             this.parent.getTaskClient().getContent(taskData.getDocumentContentId(), handlerC);
             Content content = handlerC.getContent();
-            //System.out.println("Content= " + content);
             ByteArrayInputStream bais = new ByteArrayInputStream(content.getContent());
             ois = new ObjectInputStream(bais);
             taskinfo = (String) ois.readObject();
@@ -243,12 +240,10 @@ public class AmbulanceControlPanel extends javax.swing.JPanel implements Refresh
         Task task2 = handlerT.getTask();
         TaskData taskData = task2.getTaskData();
 
-        System.out.println("TaskData = " + taskData);
         BlockingGetContentResponseHandler handlerC = new BlockingGetContentResponseHandler();
         this.parent.getTaskClient().getContent(taskData.getDocumentContentId(), handlerC);
         Content content = handlerC.getContent();
 
-        System.out.println("Content= " + content);
         ByteArrayInputStream bais = new ByteArrayInputStream(content.getContent());
 
         ObjectInputStream ois = new ObjectInputStream(bais);

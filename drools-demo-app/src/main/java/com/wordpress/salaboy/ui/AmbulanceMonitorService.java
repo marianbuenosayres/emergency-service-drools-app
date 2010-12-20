@@ -33,7 +33,6 @@ public class AmbulanceMonitorService {
     }
 
     public synchronized void start() {
-        System.out.println("Starting heart beats emulator at "+this);
         if (heartBeatsEmulator != null && heartBeatsEmulator.isRunning()) {
             throw new IllegalStateException("Heart Beats Emulator is already running!");
         }

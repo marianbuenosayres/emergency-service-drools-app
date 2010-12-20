@@ -130,17 +130,14 @@ public class BasicProcessTest {
         Task task2 = handlerT.getTask();
         TaskData taskData = task2.getTaskData();
         
-        System.out.println("TaskData = "+taskData);
         BlockingGetContentResponseHandler handlerC = new BlockingGetContentResponseHandler();
         client.getContent(taskData.getDocumentContentId(), handlerC);
         Content content = handlerC.getContent();
         
-        System.out.println("Content= "+content);
         ByteArrayInputStream bais = new ByteArrayInputStream(content.getContent());
 		
 	ObjectInputStream ois = new ObjectInputStream(bais);
         String taskinfo =(String) ois.readObject(); 
-        System.out.println("TASKINFO = "+taskinfo);
         //#{doctor.id}, #{ambulance.id},  #{patient.id}, #{patient.name}, #{patient.age}, #{patient.gender}, #{emergency.location}, #{emergency.type}
         String[] values= taskinfo.split(",");
         
@@ -178,18 +175,15 @@ public class BasicProcessTest {
         Task task3 = handlerT.getTask();
         taskData = task3.getTaskData();
         
-        System.out.println("TaskData = "+taskData);
         handlerC = new BlockingGetContentResponseHandler();
         client.getContent(taskData.getDocumentContentId(), handlerC);
         content = handlerC.getContent();
         
-        System.out.println("Content= "+content);
         bais = new ByteArrayInputStream(content.getContent());
 		
 	ois = new ObjectInputStream(bais);
         String taskinfo2 =(String) ois.readObject(); 
         
-        System.out.println("TaskInfo 2= "+taskinfo2);
         
         info = new HashMap<String, Object>();
 
