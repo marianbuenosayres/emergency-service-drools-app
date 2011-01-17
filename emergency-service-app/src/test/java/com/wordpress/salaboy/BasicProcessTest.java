@@ -56,7 +56,7 @@ public class BasicProcessTest {
 
     @Before
     public void setUp() {
-        MyDroolsUtilities.initTaskServer();
+//        MyDroolsUtilities.initTaskServer();
         client = MyDroolsUtilities.initTaskClient();
 
     }

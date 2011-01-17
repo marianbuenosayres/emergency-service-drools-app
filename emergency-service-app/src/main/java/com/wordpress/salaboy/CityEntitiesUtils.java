@@ -49,16 +49,7 @@ public class CityEntitiesUtils {
     };
     
    
-//    public static GraphicableAmbulance getGraphicableAmbulanceById(Long id){
-//        for (Map.Entry<EmergencyType, List<GraphicableAmbulance>> entry : ambulances.entrySet()) {
-//            for (GraphicableAmbulance ambulance : entry.getValue()) {
-//                if (ambulance.getAmbulance().getId().compareTo(id) == 0){
-//                    return ambulance;
-//                }
-//            }
-//        }
-//        return null;
-//    }
+
     
     public static Ambulance getAmbulanceById(Long id){
         for (Map.Entry<EmergencyType, List<Ambulance>> entry : ambulances.entrySet()) {
@@ -200,14 +191,6 @@ public class CityEntitiesUtils {
         return null;
     }
      
-//    public static GraphicableAmbulance getGraphicableAmbulanceById(EmergencyType type, Long id) {
-//         
-//        for (GraphicableAmbulance ambulancenow : CityEntitiesUtils.ambulances.get(type)) {
-//            if (ambulancenow.getAmbulance().getId().compareTo(id) == 0) {
-//                return ambulancenow;
-//            }
-//        }
-//        return null;
-//    }
+
     
 }

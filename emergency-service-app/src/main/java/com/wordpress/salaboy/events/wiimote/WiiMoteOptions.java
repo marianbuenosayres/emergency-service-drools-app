@@ -13,11 +13,10 @@ package com.wordpress.salaboy.events.wiimote;
 
 import com.intel.bluetooth.BlueCoveConfigProperties;
 import com.wordpress.salaboy.EmergencyService;
+import com.wordpress.salaboy.events.MapEventsNotifier;
 import com.wordpress.salaboy.events.PatientVitalSignNotifierEvent;
 import com.wordpress.salaboy.events.PulseEvent;
-import com.wordpress.salaboy.ui.AmbulanceMonitorService;
-import com.wordpress.salaboy.ui.CityMapUI;
-import com.wordpress.salaboy.ui.MapEventsNotifier;
+import com.wordpress.salaboy.services.AmbulanceMonitorService;
 import motej.Mote;
 import motej.event.AccelerometerEvent;
 import motej.event.AccelerometerListener;
@@ -31,11 +30,10 @@ import motej.request.ReportModeRequest;
  */
 public class WiiMoteOptions extends javax.swing.JFrame {
     private Mote mote = null;
-    private CityMapUI game = null;
+    //private CityMapUI game = null;
     /** Creates new form WiiMoteOptions */
-    public WiiMoteOptions(CityMapUI game) {
+    public WiiMoteOptions() {
         initComponents();
-        this.game = game;
         
     }
 

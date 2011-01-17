@@ -6,10 +6,10 @@
 package com.wordpress.salaboy.events.keyboard;
 
 import com.wordpress.salaboy.EmergencyService;
+import com.wordpress.salaboy.events.MapEventsNotifier;
 import com.wordpress.salaboy.events.PatientVitalSignNotifierEvent;
 import com.wordpress.salaboy.events.PulseEvent;
 import com.wordpress.salaboy.model.Ambulance;
-import com.wordpress.salaboy.ui.MapEventsNotifier;
 import java.util.HashMap;
 import java.util.Map;
 

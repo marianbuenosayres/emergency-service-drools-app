@@ -31,7 +31,7 @@ import org.jbpm.task.service.mina.MinaTaskClientHandler;
 public class MyDroolsUtilities {
 
     
-    public static final TaskServerDaemon taskServerDaemon = new TaskServerDaemon();
+    //public static final TaskServerDaemon taskServerDaemon = new TaskServerDaemon();
     
     public static StatefulKnowledgeSession createSession() {
         KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
@@ -75,21 +75,21 @@ public class MyDroolsUtilities {
 
     
 
-    public static void initTaskServer() {
-
-
-        Runtime.getRuntime().addShutdownHook(new Thread()  {
-
-            public void run() {
-                System.out.println("\n");
-                taskServerDaemon.stopServer();
-                System.out.println("server stoped...");
-            }
-        });
-
-        taskServerDaemon.startServer();
-        System.out.println("server started... (ctrl-c to stop it)");
-    }
+//    public static void initTaskServer() {
+//
+//
+//        Runtime.getRuntime().addShutdownHook(new Thread()  {
+//
+//            public void run() {
+//                System.out.println("\n");
+//                taskServerDaemon.stopServer();
+//                System.out.println("server stoped...");
+//            }
+//        });
+//
+//        taskServerDaemon.startServer();
+//        System.out.println("server started... (ctrl-c to stop it)");
+//    }
 
     public static TaskClient initTaskClient() {
         TaskClient client = new TaskClient(new MinaTaskClientConnector("client 1",
