@@ -16,8 +16,8 @@ import com.wordpress.salaboy.model.Hospital;
 import com.wordpress.salaboy.model.Doctor;
 import com.wordpress.salaboy.model.Doctor.DoctorSpeciality;
 import com.wordpress.salaboy.model.MedicalKit;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  *
@@ -217,17 +217,26 @@ public class CityEntitiesUtils {
 
     /**
      * CityEntitiesUtils.ambulances should be private. Use this method to get
-     * all the ambulances.
+     * all the ambulances. The result is ordered by Ambulance's id.
      * @return all the registered Ambulances
      */
-    public static Set<Ambulance> getAmbulances() {
-        Set<Ambulance> ambulanceSet = new LinkedHashSet<Ambulance>();
+    public static List<Ambulance> getAmbulances() {
+        List<Ambulance> ambulanceList = new ArrayList<Ambulance>();
         Collection<List<Ambulance>> values = CityEntitiesUtils.ambulances.values();
         
-        for (List<Ambulance> ambulanceList : values) {
-            ambulanceSet.addAll(ambulanceList);
+        for (List<Ambulance> specificTypeAmbulances : values) {
+            ambulanceList.addAll(specificTypeAmbulances);
         }
         
-        return ambulanceSet;
+        Collections.sort(ambulanceList, new Comparator<Ambulance>(){
+
+            @Override
+            public int compare(Ambulance o1, Ambulance o2) {
+                return o1.getId().compareTo(o2.getId());
+            }
+            
+        });
+        
+        return ambulanceList;
     }
 }

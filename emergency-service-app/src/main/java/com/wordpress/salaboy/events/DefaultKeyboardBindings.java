@@ -8,7 +8,7 @@ package com.wordpress.salaboy.events;
 import com.wordpress.salaboy.CityEntitiesUtils;
 import com.wordpress.salaboy.events.keyboard.KeyboardPulseEventGenerator;
 import com.wordpress.salaboy.model.Ambulance;
-import java.util.Set;
+import java.util.List;
 
 /**
  *
@@ -22,7 +22,7 @@ public class DefaultKeyboardBindings {
      * Bind default keys to each registered Ambulance. 
      */
     public void applyDefaultConfiguration(){
-        Set<Ambulance> ambulances = CityEntitiesUtils.getAmbulances();
+        List<Ambulance> ambulances = CityEntitiesUtils.getAmbulances();
         int i = 0;
         for (Ambulance ambulance : ambulances) {
            if (i < defaultKeys.length){

@@ -12,13 +12,19 @@
 package com.wordpress.salaboy.ui;
 
 import com.wordpress.salaboy.CityEntitiesUtils;
+import com.wordpress.salaboy.events.DefaultKeyboardBindings;
 import com.wordpress.salaboy.events.keyboard.KeyboardPulseEventGenerator;
 import com.wordpress.salaboy.model.Ambulance;
-import java.util.Collection;
+import java.text.ParseException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.text.MaskFormatter;
 
 /**
  *
@@ -28,18 +34,41 @@ public class EventGeneratorsConfigPanel extends javax.swing.JPanel {
 
     /** Creates new form EventGeneratorsConfigPanel */
     public EventGeneratorsConfigPanel() {
+        
+        //REMOVE this. This is here just for testing purposes
+        //new DefaultKeyboardBindings().applyDefaultConfiguration();
+        
         initComponents();
         
         JComboBox combo = new JComboBox();
-        Collection<List<Ambulance>> ambulances = CityEntitiesUtils.ambulances.values();
-        for (List<Ambulance> listOfAmbulances : ambulances) {
-            for (Ambulance ambulance : listOfAmbulances) {
-                String item = "Ambulance - " + ambulance.getId();
-                combo.addItem(item);
-            }
+        List<Ambulance> ambulances = CityEntitiesUtils.getAmbulances();
+        for (Ambulance ambulance : ambulances) {
+            String item = "Ambulance - " + ambulance.getId();
+            combo.addItem(item);
         }
         
         this.tblGenerators.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(combo));
+
+        MaskFormatter formatter;
+        try {
+            formatter = new MaskFormatter("Keyboard[''?'',''?'']");
+            JFormattedTextField textEditor = new JFormattedTextField(formatter);
+            this.tblGenerators.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(textEditor));
+        } catch (ParseException ex) {
+            Logger.getLogger(EventGeneratorsConfigPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        
+        
+        for (Ambulance ambulance : ambulances) {
+            char[] registeredKeysForAmbulance = KeyboardPulseEventGenerator.getInstance().getRegisteredKeysForAmbulance(ambulance);
+            
+            String ambulanceValue = "Ambulance - " + ambulance.getId();
+            String keyValue = "Keyboard['"+registeredKeysForAmbulance[0]+"','"+registeredKeysForAmbulance[1]+"']";
+ 
+            ((DefaultTableModel)tblGenerators.getModel()).addRow(new Object[]{keyValue, ambulanceValue});
+        }
+        
     }
 
     /** This method is called from within the constructor to
@@ -68,7 +97,7 @@ public class EventGeneratorsConfigPanel extends javax.swing.JPanel {
                 java.lang.Object.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
-                false, true
+                true, true
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -96,24 +125,28 @@ public class EventGeneratorsConfigPanel extends javax.swing.JPanel {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 375, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(47, 47, 47)
                         .addComponent(btnWiiMoteLookup)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnApplyConfiguration)))
-                .addContainerGap(25, Short.MAX_VALUE))
+                        .addGap(18, 18, 18)
+                        .addComponent(btnApplyConfiguration)
+                        .addContainerGap())
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jScrollPane1)
+                        .addGap(13, 13, 13))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap()
+                .addComponent(jScrollPane1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnWiiMoteLookup)
-                    .addComponent(btnApplyConfiguration))
-                .addGap(146, 146, 146))
+                    .addComponent(btnApplyConfiguration)
+                    .addComponent(btnWiiMoteLookup))
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 

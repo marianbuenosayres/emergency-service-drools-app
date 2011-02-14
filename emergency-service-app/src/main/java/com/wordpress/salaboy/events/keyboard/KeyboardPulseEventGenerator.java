@@ -32,21 +32,34 @@ public class KeyboardPulseEventGenerator {
         return INSTANCE;
     }
     
+    //@TODO: Triple Map!! We should improve this.
     private Map<Character,Ambulance> upKeysList = new HashMap<Character, Ambulance>();
     private Map<Character,Ambulance> downKeysList = new HashMap<Character, Ambulance>();
+    private Map<Ambulance, Character[]> ambulanceMappings = new HashMap<Ambulance, Character[]>();
     
     public void resetConfigurations(){
         this.upKeysList = new HashMap<Character, Ambulance>();
         this.downKeysList = new HashMap<Character, Ambulance>();
+        this.ambulanceMappings = new HashMap<Ambulance, Character[]>();
     }
     
     public void addConfiguration(char upKey, char downKey, Ambulance ambulance){
+        this.ambulanceMappings.put(ambulance, new Character[]{upKey, downKey});
         this.upKeysList.put(upKey, ambulance);
         this.downKeysList.put(downKey, ambulance);
     }
 
     public boolean isKeyMapped(char key){
         return this.upKeysList.containsKey(key) || this.downKeysList.containsKey(key);
+    }
+    
+    public char[] getRegisteredKeysForAmbulance(Ambulance ambulance){
+        if (!this.ambulanceMappings.containsKey(ambulance)){
+            return null;
+        }
+        Character[] characters = this.ambulanceMappings.get(ambulance);
+        //Autobox doesn't work here?
+        return new char[]{characters[0],characters[1]};
     }
     
     public void generateEvent(char key){
