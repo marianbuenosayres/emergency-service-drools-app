@@ -14,6 +14,7 @@ import com.wordpress.salaboy.events.wiimote.WiiMoteOptions;
 import com.wordpress.salaboy.CityEntitiesUtils;
 import com.wordpress.salaboy.EmergencyService;
 import com.wordpress.salaboy.MyDroolsUtilities;
+import com.wordpress.salaboy.events.DefaultKeyboardBindings;
 import com.wordpress.salaboy.events.MapEventsNotifier.EventType;
 import com.wordpress.salaboy.events.TaskListUIAmbulancePositionUpdatedEventNotifier;
 import com.wordpress.salaboy.events.TaskListUIEmergencyReachedEventNotifier;
@@ -45,6 +46,8 @@ import javax.swing.JFrame;
 import org.hornetq.core.config.impl.FileConfiguration;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
+import org.hornetq.jms.server.JMSServerManager;
+import org.hornetq.jms.server.impl.JMSServerManagerImpl;
 
 /**
  *
@@ -77,6 +80,10 @@ public class UserTaskListUI extends javax.swing.JFrame {
         this.mainJTabbedPane.add(this.ambulanceControlPanel, 1);
         this.mainJTabbedPane.add(this.currentEmergenciesPanel, 2);
         this.mainJTabbedPane.setSelectedComponent(this.phoneCallsPanel);
+        
+        //Apply default keybindings.
+        new DefaultKeyboardBindings().applyDefaultConfiguration();
+        
 
     }
 

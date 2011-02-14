@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.wordpress.salaboy;
 
 import com.wordpress.salaboy.util.MedicalKitUtil;
@@ -17,29 +16,31 @@ import com.wordpress.salaboy.model.Hospital;
 import com.wordpress.salaboy.model.Doctor;
 import com.wordpress.salaboy.model.Doctor.DoctorSpeciality;
 import com.wordpress.salaboy.model.MedicalKit;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
  * @author salaboy
  */
 public class CityEntitiesUtils {
-    
-    public static final Map<EmergencyType, List<Ambulance>> ambulances = new HashMap<EmergencyType, List<Ambulance>>() {
+
+    public static final Map<EmergencyType, List<Ambulance>> ambulances = new HashMap<EmergencyType, List<Ambulance>>()  {
 
         {
-            put(EmergencyType.FIRE, new ArrayList<Ambulance>() {
+            put(EmergencyType.FIRE, new ArrayList<Ambulance>()  {
 
                 {
                     add(initializeFireAmbulance());
                 }
             });
-            put(EmergencyType.HEART_ATTACK, new ArrayList<Ambulance>() {
+            put(EmergencyType.HEART_ATTACK, new ArrayList<Ambulance>()  {
 
                 {
                     add(initializeHeartAttackAmbulance());
                 }
             });
-            put(EmergencyType.CAR_CRASH, new ArrayList<Ambulance>() {
+            put(EmergencyType.CAR_CRASH, new ArrayList<Ambulance>()  {
 
                 {
                     add(initializeCarCrashAmbulance());
@@ -47,46 +48,42 @@ public class CityEntitiesUtils {
             });
         }
     };
-    
-   
 
-    
-    public static Ambulance getAmbulanceById(Long id){
+    public static Ambulance getAmbulanceById(Long id) {
         for (Map.Entry<EmergencyType, List<Ambulance>> entry : ambulances.entrySet()) {
             for (Ambulance ambulance : entry.getValue()) {
-                if (ambulance.getId().compareTo(id) == 0){
+                if (ambulance.getId().compareTo(id) == 0) {
                     return ambulance;
                 }
             }
         }
         return null;
     }
-    
-    public static Hospital getHospitalById(Long id){
+
+    public static Hospital getHospitalById(Long id) {
         for (Map.Entry<String, Hospital> entry : hospitals.entrySet()) {
-            if (entry.getValue().getId().compareTo(id) == 0){
+            if (entry.getValue().getId().compareTo(id) == 0) {
                 return entry.getValue();
             }
         }
         return null;
     }
-    
-    public static final Map<DoctorSpeciality, List<Doctor>> doctors = new HashMap<DoctorSpeciality, List<Doctor>>() {
+    public static final Map<DoctorSpeciality, List<Doctor>> doctors = new HashMap<DoctorSpeciality, List<Doctor>>()  {
 
         {
-            put(DoctorSpeciality.BURNS, new ArrayList<Doctor>() {
+            put(DoctorSpeciality.BURNS, new ArrayList<Doctor>()  {
 
                 {
                     add(new Doctor(DoctorSpeciality.BURNS));
                 }
             });
-            put(DoctorSpeciality.BONES, new ArrayList<Doctor>() {
+            put(DoctorSpeciality.BONES, new ArrayList<Doctor>()  {
 
                 {
                     add(new Doctor(DoctorSpeciality.BONES));
                 }
             });
-            put(DoctorSpeciality.REANIMATION, new ArrayList<Doctor>() {
+            put(DoctorSpeciality.REANIMATION, new ArrayList<Doctor>()  {
 
                 {
                     add(new Doctor(DoctorSpeciality.REANIMATION));
@@ -94,71 +91,98 @@ public class CityEntitiesUtils {
             });
         }
     };
-    
-    public static final Map<String, Hospital> hospitals = new HashMap<String, Hospital>(){{
-        
-        put("Hosital 01", new Hospital("Hospital 01", 11, 13));
-        put("Hosital 02", new Hospital("Hospital 02", 35, 13));
-        put("Hosital 03", new Hospital("Hospital 03", 17, 25));
-       
-    
-    }};
+    public static final Map<String, Hospital> hospitals = new HashMap<String, Hospital>() {
+
+        {
+
+            put("Hosital 01", new Hospital("Hospital 01", 11, 13));
+            put("Hosital 02", new Hospital("Hospital 02", 35, 13));
+            put("Hosital 03", new Hospital("Hospital 03", 17, 25));
+
+
+        }
+    };
+
     public static Hospital getHospitalByCoordinates(float x, float y) {
         Collection<Hospital> myhospitals = CityEntitiesUtils.hospitals.values();
-        float newx = Math.round(x/16);
-        float newy = Math.round(x/16);
-        
-        for(Hospital thishospital : myhospitals){
-            if(thishospital.getPositionX() == newx && thishospital.getPositionY() == newy){
+        float newx = Math.round(x / 16);
+        float newy = Math.round(x / 16);
+
+        for (Hospital thishospital : myhospitals) {
+            if (thishospital.getPositionX() == newx && thishospital.getPositionY() == newy) {
                 return thishospital;
             }
         }
         return null;
     }
-     
-      public static String translatePosition(int x, int y){
+
+    public static String translatePosition(int x, int y) {
         String xString = "";
         String yString = "";
-        
 
-        switch(x){
-            
-            case 2: xString = "1st Street"; break;
-            
-            case 7: xString = "2nd Street"; break;
-            
-            case 13: xString = "3rd Street"; break; 
-            
-            case 19: xString = "4th Street"; break;
-            
-            case 25: xString = "5th Street"; break;
-            
-            case 31: xString = "6th Street"; break;
-            
-            case 37: xString = "7th Street"; break;      
+
+        switch (x) {
+
+            case 2:
+                xString = "1st Street";
+                break;
+
+            case 7:
+                xString = "2nd Street";
+                break;
+
+            case 13:
+                xString = "3rd Street";
+                break;
+
+            case 19:
+                xString = "4th Street";
+                break;
+
+            case 25:
+                xString = "5th Street";
+                break;
+
+            case 31:
+                xString = "6th Street";
+                break;
+
+            case 37:
+                xString = "7th Street";
+                break;
         }
-         switch(y){
-            
-            case 2: yString = "A Street"; break;
-            
-            case 7: yString = "B Street"; break;
-            
-            case 13: yString = "C Street"; break;
-            
-            case 19: yString = "D Street"; break;
-            
-            case 25: yString = "E Street"; break;
-            
+        switch (y) {
+
+            case 2:
+                yString = "A Street";
+                break;
+
+            case 7:
+                yString = "B Street";
+                break;
+
+            case 13:
+                yString = "C Street";
+                break;
+
+            case 19:
+                yString = "D Street";
+                break;
+
+            case 25:
+                yString = "E Street";
+                break;
+
         }
-        
-        if(xString.equals("") || yString.equals("")){
+
+        if (xString.equals("") || yString.equals("")) {
             return "N/A";
         }
-        
-        return ""+xString +" and "+yString;
+
+        return "" + xString + " and " + yString;
     }
-      
-      private static Ambulance initializeFireAmbulance() {
+
+    private static Ambulance initializeFireAmbulance() {
         MedicalKit fireKit = MedicalKitUtil.createNewMEdicalKit(DoctorSpeciality.BURNS);
         Ambulance fireAmbulance = new Ambulance("Fire Ambulance");
         fireAmbulance.addKit(fireKit);
@@ -180,9 +204,9 @@ public class CityEntitiesUtils {
         carCrashAmbulance.addKit(carCrashKit2);
         return carCrashAmbulance;
     }
-    
-     public static Ambulance getAmbulanceById(EmergencyType type, Long id) {
-        
+
+    public static Ambulance getAmbulanceById(EmergencyType type, Long id) {
+
         for (Ambulance ambulancenow : CityEntitiesUtils.ambulances.get(type)) {
             if (ambulancenow.getId().compareTo(id) == 0) {
                 return ambulancenow;
@@ -190,7 +214,20 @@ public class CityEntitiesUtils {
         }
         return null;
     }
-     
 
-    
+    /**
+     * CityEntitiesUtils.ambulances should be private. Use this method to get
+     * all the ambulances.
+     * @return all the registered Ambulances
+     */
+    public static Set<Ambulance> getAmbulances() {
+        Set<Ambulance> ambulanceSet = new LinkedHashSet<Ambulance>();
+        Collection<List<Ambulance>> values = CityEntitiesUtils.ambulances.values();
+        
+        for (List<Ambulance> ambulanceList : values) {
+            ambulanceSet.addAll(ambulanceList);
+        }
+        
+        return ambulanceSet;
+    }
 }

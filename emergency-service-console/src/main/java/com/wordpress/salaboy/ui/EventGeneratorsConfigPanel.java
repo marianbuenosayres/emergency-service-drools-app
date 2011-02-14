@@ -58,8 +58,7 @@ public class EventGeneratorsConfigPanel extends javax.swing.JPanel {
 
         tblGenerators.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {"Keyboard['q','w']", "Ambulance - 0"},
-		{"Keyboard['a','s']", "Ambulance - 1"}
+
             },
             new String [] {
                 "Generator", "Ambulance"
@@ -108,7 +107,7 @@ public class EventGeneratorsConfigPanel extends javax.swing.JPanel {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(13, Short.MAX_VALUE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
