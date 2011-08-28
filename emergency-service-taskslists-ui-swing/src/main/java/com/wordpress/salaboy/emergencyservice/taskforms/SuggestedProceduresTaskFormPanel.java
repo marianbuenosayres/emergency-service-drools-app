@@ -13,6 +13,7 @@ package com.wordpress.salaboy.emergencyservice.taskforms;
 import com.wordpress.salaboy.api.HumanTaskService;
 import com.wordpress.salaboy.emergencyservice.tasklists.ControlSuggestedProceduresTaskListPanel;
 import com.wordpress.salaboy.emergencyservice.main.UserTaskListUI;
+import com.wordpress.salaboy.model.ActivePatients;
 import com.wordpress.salaboy.model.Call;
 import com.wordpress.salaboy.model.Emergency;
 import com.wordpress.salaboy.model.Patient;
@@ -417,7 +418,8 @@ public class SuggestedProceduresTaskFormPanel extends javax.swing.JPanel {
         String patientGender = "";
 
         if (emergencyNroOfPeople.equals("1")) {
-        	Patient patient = (Patient) taskinfo.get("patient");
+            ActivePatients activePatients = (ActivePatients) taskinfo.get("activePatients");
+            Patient patient = activePatients.getPatient(0);
             patientAge = String.valueOf(patient.getAge());
             patientGender = patient.getGender();
             patientAgejTextField.setText(patientAge);
