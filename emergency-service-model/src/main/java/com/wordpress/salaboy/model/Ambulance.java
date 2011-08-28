@@ -21,8 +21,6 @@ public class Ambulance implements Vehicle{
     private float positionX;
     private float positionY;
     private String name;
-    public static AtomicLong incrementalId = new AtomicLong();
-    
 
 	public Ambulance() {
 		// Needed for serialization
@@ -122,10 +120,6 @@ public class Ambulance implements Vehicle{
 
 	public static AtomicLong getIncrementalId() {
 		return incrementalId;
-	}
-
-	public static void setIncrementalId(AtomicLong incrementalId) {
-		Ambulance.incrementalId = incrementalId;
 	}
 
 	public void setName(String name) {

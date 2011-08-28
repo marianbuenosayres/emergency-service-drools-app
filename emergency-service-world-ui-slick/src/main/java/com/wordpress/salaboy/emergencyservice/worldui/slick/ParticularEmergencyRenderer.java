@@ -8,14 +8,17 @@ import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.Graphica
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableAmbulance;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableEmergency;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableFactory;
+import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableHighlightedFirefighterDepartment;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableHighlightedHospital;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableVehicle;
 import com.wordpress.salaboy.messaging.MessageFactory;
 import com.wordpress.salaboy.model.Ambulance;
 import com.wordpress.salaboy.model.FireTruck;
+import com.wordpress.salaboy.model.FirefightersDepartment;
 import com.wordpress.salaboy.model.Hospital;
 import com.wordpress.salaboy.model.PoliceCar;
 import com.wordpress.salaboy.model.Vehicle;
+import com.wordpress.salaboy.model.messages.FirefigthersDepartmentSelectedMessage;
 import com.wordpress.salaboy.model.messages.HospitalSelectedMessage;
 import com.wordpress.salaboy.model.messages.VehicleDispatchedMessage;
 import com.wordpress.salaboy.model.messages.patient.HeartBeatMessage;
@@ -50,6 +53,7 @@ public class ParticularEmergencyRenderer implements EmergencyRenderer {
     private Vehicle activeVehicle;
     private Map<Graphicable, Vehicle> vehicles;
     private GraphicableHighlightedHospital selectedHospital;
+    private GraphicableHighlightedFirefighterDepartment selectedFirefighterDepartment;
     private boolean turbo;
     private boolean hideEmergency;
 
@@ -77,6 +81,9 @@ public class ParticularEmergencyRenderer implements EmergencyRenderer {
         if (selectedHospital != null) {
             g.draw(selectedHospital.getPolygon());
         }
+        if (selectedFirefighterDepartment != null) {
+            g.draw(selectedFirefighterDepartment.getPolygon());
+        }
     }
 
     public void renderAnimation(GameContainer gc, Graphics g) {
@@ -97,6 +104,9 @@ public class ParticularEmergencyRenderer implements EmergencyRenderer {
         if (selectedHospital != null) {
             g.drawAnimation(selectedHospital.getAnimation(), selectedHospital.getPolygon().getX() - 32, selectedHospital.getPolygon().getY() - 80);
         }
+        if (selectedFirefighterDepartment != null) {
+            g.drawAnimation(selectedFirefighterDepartment.getAnimation(), selectedFirefighterDepartment.getPolygon().getX() - 32, selectedFirefighterDepartment.getPolygon().getY() - 80);
+        }
     }
 
     public void addVehicle(Vehicle vehicle) {
@@ -114,6 +124,10 @@ public class ParticularEmergencyRenderer implements EmergencyRenderer {
 
     public void selectHospital(Hospital hospital) {
         selectedHospital = GraphicableFactory.newHighlightedHospital(hospital);
+    }
+    
+    public void selectFirefighterDepartment(FirefightersDepartment firefigthersDepartment) {
+        selectedFirefighterDepartment = GraphicableFactory.newHighlightedFirefighterDepartment(firefigthersDepartment);
     }
 
     public void onKeyPressed(int code, char key) {
@@ -135,6 +149,8 @@ public class ParticularEmergencyRenderer implements EmergencyRenderer {
             selectMockHospital(1L);
         } else if (Input.KEY_F6 == code) {
             selectMockHospital(2L);
+        } else if (Input.KEY_F7 == code) {
+            selectMockFireDepartment(0L);
         } else if (Input.KEY_LSHIFT == code) {
             this.turbo = true;
         }
@@ -402,6 +418,17 @@ public class ParticularEmergencyRenderer implements EmergencyRenderer {
     
     private void addMockVehicle(Vehicle vehicle){
         try {
+            
+            //Dirty way to put a free id to the vehicle
+            Long vehicleId = null;
+            Random random = new Random(System.currentTimeMillis());
+            do{
+                vehicleId = random.nextLong(); 
+            } while(DistributedPeristenceServerService.getInstance().loadVehicle(vehicleId) != null);
+            
+            vehicle.setId(vehicleId);
+            
+            DistributedPeristenceServerService.getInstance().storeVehicle(vehicle);
             MessageFactory.sendMessage(new VehicleDispatchedMessage(this.emergency.getCallId(), vehicle.getId()));
         } catch (HornetQException ex) {
             Logger.getLogger(ParticularEmergencyRenderer.class.getName()).log(Level.SEVERE, null, ex);
@@ -412,6 +439,15 @@ public class ParticularEmergencyRenderer implements EmergencyRenderer {
         Hospital mock = DistributedPeristenceServerService.getInstance().loadHospital(l);
         try {
             MessageFactory.sendMessage(new HospitalSelectedMessage(this.emergency.getCallId(), mock));
+        } catch (HornetQException ex) {
+            Logger.getLogger(ParticularEmergencyRenderer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private void selectMockFireDepartment(long l) {
+        FirefightersDepartment mock = DistributedPeristenceServerService.getInstance().loadFireDepartment(l);
+        try {
+            MessageFactory.sendMessage(new FirefigthersDepartmentSelectedMessage(this.emergency.getCallId(), mock));
         } catch (HornetQException ex) {
             Logger.getLogger(ParticularEmergencyRenderer.class.getName()).log(Level.SEVERE, null, ex);
         }

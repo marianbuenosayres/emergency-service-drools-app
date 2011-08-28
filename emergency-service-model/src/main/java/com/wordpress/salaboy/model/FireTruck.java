@@ -18,8 +18,6 @@ public class FireTruck implements Vehicle{
     private Date emergencyReachedTime;
     private float positionX;
     private float positionY;
-    public static AtomicLong incrementalId = new AtomicLong();
-    
 
 
     public FireTruck(String name, Date departureTime) {

@@ -16,9 +16,6 @@ public class PoliceCar implements Vehicle{
     private Date emergencyReachedTime;
     private float positionX;
     private float positionY;
-    public static AtomicLong incrementalId = new AtomicLong();
-    
-
 
     public PoliceCar(String name, Date departureTime) {
         this.id = PoliceCar.incrementalId.getAndIncrement();

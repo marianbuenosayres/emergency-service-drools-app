@@ -9,6 +9,7 @@ import com.wordpress.salaboy.messaging.MessageConsumerWorker;
 import com.wordpress.salaboy.messaging.MessageConsumerWorkerHandler;
 import com.wordpress.salaboy.messaging.MessageServerSingleton;
 import com.wordpress.salaboy.model.CityEntities;
+import com.wordpress.salaboy.model.FirefightersDepartment;
 import com.wordpress.salaboy.model.Hospital;
 import com.wordpress.salaboy.model.Vehicle;
 import com.wordpress.salaboy.model.events.PatientAtHospitalEvent;
@@ -119,7 +120,9 @@ public class CoreServer {
             System.out.println("Initializing Hospital into the Cache - >" + hospital.toString());
             DistributedPeristenceServerService.getInstance().storeHospital(hospital);
         }
-
+        
+        DistributedPeristenceServerService.getInstance().storeFireDepartment((FirefightersDepartment)CityEntities.buildings.get("Firefighters Department"));
+        
         //Init First Response Service, just to have one instance ready for new phone calls
         IncomingCallsMGMTService.getInstance();
         

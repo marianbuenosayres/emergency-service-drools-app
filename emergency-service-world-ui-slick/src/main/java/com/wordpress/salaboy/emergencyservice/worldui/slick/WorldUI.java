@@ -25,8 +25,11 @@ import org.newdawn.slick.SlickException;
 import org.newdawn.slick.SpriteSheet;
 import org.newdawn.slick.opengl.renderer.Renderer;
 import com.wordpress.salaboy.model.Call;
+import com.wordpress.salaboy.model.Emergency;
+import com.wordpress.salaboy.model.FirefightersDepartment;
 import com.wordpress.salaboy.model.command.Command;
 import com.wordpress.salaboy.model.messages.EmergencyDetailsMessage;
+import com.wordpress.salaboy.model.messages.FirefigthersDepartmentSelectedMessage;
 import com.wordpress.salaboy.model.messages.HospitalSelectedMessage;
 import com.wordpress.salaboy.model.messages.IncomingCallMessage;
 import com.wordpress.salaboy.model.messages.VehicleDispatchedMessage;
@@ -185,12 +188,41 @@ public class WorldUI extends BasicGame {
                 });
             }
         });
+        
+        MessageConsumerWorker firefigthersDepartmentWorker = new MessageConsumerWorker("firefigthersDepartmentWorldUI", new MessageConsumerWorkerHandler<FirefigthersDepartmentSelectedMessage>() {
+
+            @Override
+            public void handleMessage(final FirefigthersDepartmentSelectedMessage message) {
+                //Changes emergency animation
+                renderCommands.add(new Command() {
+
+                    public void execute() {
+                       
+                        if (emergencies.get(message.getCallId())==null){
+                            System.out.println("Unknown emergency for call Id "+message.getCallId());
+                            return;
+                        }
+                        selectFirefighterDepartmentForEmergency(message.getCallId(), message.getFirefigthersDepartment());
+                        
+                    }
+
+                });
+            }
+        });
+        
         hospitalSelectedWorker.start();
         emergencyDetailsWorker.start();
         vehicleDispatchedWorker.start();
+        firefigthersDepartmentWorker.start();
     }
 
-    public void addRandomEmergency() {
+    
+    public void addRandomGenericEmergency() {
+        this.addRandomEmergency(Emergency.EmergencyType.UNDEFINED, null);
+
+    }
+    
+    public void addRandomEmergency(Emergency.EmergencyType emergencyType, Integer numberOfPeople) {
         
         int randomx = 0;
         int randomy = 0;
@@ -217,7 +249,14 @@ public class WorldUI extends BasicGame {
         int callSquare[] = {1, 1, 31, 1, 31, 31, 1, 31};
         BlockMap.emergencies.add(new Block(xs[call.getX()] * 16, ys[call.getY()] * 16, callSquare, "callId:" + call.getId()));
         
-        GraphicableEmergency newEmergency = GraphicableFactory.newEmergency(call);
+        GraphicableEmergency newEmergency = null;
+        
+        if (emergencyType == Emergency.EmergencyType.UNDEFINED){
+            newEmergency = GraphicableFactory.newGenericEmergency(call);
+        }else{
+            newEmergency = GraphicableFactory.newEmergency(call, emergencyType, numberOfPeople);
+        }
+        
         emergencies.put(call.getId(), newEmergency);
 
         renderers.put(call.getId(), new ParticularEmergencyRenderer(this,newEmergency));
@@ -255,6 +294,10 @@ public class WorldUI extends BasicGame {
     
     public void selectHospitalForEmergency(Long callId, Hospital hospital) {
         this.renderers.get(callId).selectHospital(hospital);               
+    }
+    
+    public void selectFirefighterDepartmentForEmergency(Long callId, FirefightersDepartment firefigthersDepartment) {
+        this.renderers.get(callId).selectFirefighterDepartment(firefigthersDepartment);               
     }
     
     

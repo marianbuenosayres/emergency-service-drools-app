@@ -19,6 +19,7 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 
 import com.wordpress.salaboy.model.Emergency;
+import com.wordpress.salaboy.model.FirefightersDepartment;
 import com.wordpress.salaboy.model.Hospital;
 import com.wordpress.salaboy.model.Patient;
 import com.wordpress.salaboy.model.Vehicle;
@@ -127,12 +128,29 @@ public class DistributedPeristenceServerService {
         this.getCache().put("hospitals",hospitals);
         
     }
+    
+    public void storeFireDepartment(FirefightersDepartment fireDepartment) {
+        if (this.getCache().get("firefigthersDepartments") == null) {
+            getCache().put("firefigthersDepartments", new HashMap<Long, Hospital>());
+        }
+        Map<Long, FirefightersDepartment> firefigthersDepartments = ((Map<Long, FirefightersDepartment>) this.getCache().get("firefigthersDepartments"));
+        firefigthersDepartments.put(fireDepartment.getId(), fireDepartment);
+        this.getCache().put("firefigthersDepartments",firefigthersDepartments);
+        
+    }
 
     public Hospital loadHospital(Long id) {
         if (this.getCache().get("hospitals") == null) {
             getCache().put("hospitals", new HashMap<Long, Hospital>());
         }
         return ((Map<Long, Hospital>) this.getCache().get("hospitals")).get(id);
+    }
+    
+    public FirefightersDepartment loadFireDepartment(Long id) {
+        if (this.getCache().get("firefigthersDepartments") == null) {
+            getCache().put("firefigthersDepartments", new HashMap<Long, Hospital>());
+        }
+        return ((Map<Long, FirefightersDepartment>) this.getCache().get("firefigthersDepartments")).get(id);
     }
 
     public Collection<Hospital> getAllHospitals() {

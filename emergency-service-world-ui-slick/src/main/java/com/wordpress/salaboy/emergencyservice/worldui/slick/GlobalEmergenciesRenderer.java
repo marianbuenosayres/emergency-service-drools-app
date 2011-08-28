@@ -5,6 +5,7 @@
 package com.wordpress.salaboy.emergencyservice.worldui.slick;
 
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableEmergency;
+import com.wordpress.salaboy.model.Emergency;
 import java.util.Map.Entry;
 import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.Graphics;
@@ -40,7 +41,9 @@ public class GlobalEmergenciesRenderer implements EmergencyRenderer {
 
     public void onKeyPressed(int code, char key) {
         if (Input.KEY_SPACE == code) {
-            this.ui.addRandomEmergency();
+            this.ui.addRandomGenericEmergency();
+        } else if (Input.KEY_ENTER == code) {
+            this.ui.addRandomEmergency(Emergency.EmergencyType.FIRE,null);
         } else if (Input.KEY_ESCAPE == code) {
             this.ui.goToGlobalMap();
         }
