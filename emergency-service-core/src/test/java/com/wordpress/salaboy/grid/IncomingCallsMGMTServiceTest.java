@@ -32,6 +32,7 @@ import com.wordpress.salaboy.messaging.MessageConsumer;
 import com.wordpress.salaboy.messaging.MessageProducer;
 import com.wordpress.salaboy.messaging.MessageServerSingleton;
 import com.wordpress.salaboy.model.Call;
+import com.wordpress.salaboy.model.SelectedProcedures;
 import com.wordpress.salaboy.model.events.AllProceduresEndedEvent;
 import com.wordpress.salaboy.services.IncomingCallsMGMTService;
 import java.util.Date;
@@ -250,8 +251,8 @@ public class IncomingCallsMGMTServiceTest extends GridBaseTest{
         
         
         Map<String,Object> info = new HashMap<String, Object>();
-        List<String> selectedProcedures = new ArrayList<String>();
-        selectedProcedures.add("DefaultHeartAttackProcedure");
+        SelectedProcedures selectedProcedures = new SelectedProcedures(retrivedEmergency.getId());
+        selectedProcedures.addSelectedProcedureName("DefaultHeartAttackProcedure");
         info.put("selectedProcedures", selectedProcedures);
         
         
