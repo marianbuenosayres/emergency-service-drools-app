@@ -1,6 +1,6 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * To change this template, choose Tools | Templates and open the template in
+ * the editor.
  */
 
 /*
@@ -10,29 +10,28 @@
  */
 package com.wordpress.salaboy.emergencyservice.monitor;
 
+import com.wordpress.salaboy.context.tracking.ContextTrackingProvider;
+import com.wordpress.salaboy.context.tracking.ContextTrackingService;
+import com.wordpress.salaboy.emergencyservice.util.AlertsIconListRenderer;
 import com.wordpress.salaboy.messaging.MessageConsumerWorker;
 import com.wordpress.salaboy.messaging.MessageConsumerWorkerHandler;
 import com.wordpress.salaboy.messaging.MessageFactory;
+import com.wordpress.salaboy.model.messages.*;
 import com.wordpress.salaboy.model.messages.patient.HeartBeatMessage;
-import com.wordpress.salaboy.model.messages.VehicleHitsCornerMessage;
-import com.wordpress.salaboy.model.messages.VehicleHitsEmergencyMessage;
-import com.wordpress.salaboy.model.messages.VehicleHitsHospitalMessage;
 import com.wordpress.salaboy.model.messages.patient.PatientMonitorAlertMessage;
-import com.wordpress.salaboy.emergencyservice.util.AlertsIconListRenderer;
-import com.wordpress.salaboy.model.serviceclient.DistributedPeristenceServerService;
+import com.wordpress.salaboy.model.serviceclient.PersistenceService;
+import com.wordpress.salaboy.model.serviceclient.PersistenceServiceProvider;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
+import javax.swing.UIManager;
 import org.hornetq.api.core.HornetQException;
 
 /**
@@ -48,15 +47,32 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
     private MessageConsumerWorker patientMonitorAlertWorker;
     private MessageConsumerWorker vehicleHitsEmergencyWorker;
     private MessageConsumerWorker vehicleHitsHospitalWorker;
-    private Long callId;
+    private MessageConsumerWorker waterTankDecreaseWorker;
+    private MessageConsumerWorker waterTankIncreaseWorker;
+    private MessageConsumerWorker waterPumpTiltWorker;
+    private MessageConsumerWorker outOfWaterWorker;
+    private MessageConsumerWorker waterRefillWorker;
+    private String callId;
     private List<String> alerts = new ArrayList<String>();
-    private Map<Long, Boolean> vehicleHitEmergency = new HashMap<Long, Boolean>();
-    private Map<Long, Boolean> vehicleHitHospital = new HashMap<Long, Boolean>();
+    private Map<String, Boolean> vehicleHitEmergency = new HashMap<String, Boolean>();
+    private Map<String, Boolean> vehicleHitHospital = new HashMap<String, Boolean>();
+    private final PersistenceService persistenceService;
+    private final ContextTrackingService trackingService;
+    private Map<String, FireTruckStatusJPanel> fireTruckPanels = new HashMap<String, FireTruckStatusJPanel>();
+    private String emergencyId;
+    
+    
 
     /** Creates new form EmergencyMonitorPanel */
-    public EmergencyMonitorPanel(Long callId) {
-        this.callId = callId;
+    public EmergencyMonitorPanel(String callId) throws IOException {
 
+        this.callId = callId;
+        
+        persistenceService = PersistenceServiceProvider.getPersistenceService();
+
+        trackingService = ContextTrackingProvider.getTrackingService();
+        
+        emergencyId = trackingService.getEmergencyAttachedToCall(callId);
         initComponents();
 
         loadMapImage();
@@ -79,7 +95,7 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
         jScrollPane3 = new javax.swing.JScrollPane();
         lstAlerts = new javax.swing.JList();
         btnClear1 = new javax.swing.JButton();
-        jTabbedPane = new javax.swing.JTabbedPane();
+        jEmergencyTabbedPane = new javax.swing.JTabbedPane();
         jPanel1 = new javax.swing.JPanel();
         lblMap = new javax.swing.JLabel();
         btnClear = new javax.swing.JButton();
@@ -108,13 +124,13 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnClear1)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE))
+                    .addComponent(jScrollPane3))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 96, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 92, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnClear1))
         );
@@ -144,7 +160,7 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(161, 161, 161)
                         .addComponent(btnClear)))
-                .addContainerGap(57, Short.MAX_VALUE))
+                .addContainerGap(108, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -152,15 +168,15 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
                 .addComponent(lblMap, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnClear)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
-        jTabbedPane.addTab("GPS", jPanel1);
+        jEmergencyTabbedPane.addTab("GPS", jPanel1);
 
         auditLogjTextArea.setColumns(20);
         auditLogjTextArea.setRows(5);
         jScrollPane1.setViewportView(auditLogjTextArea);
-        auditLogjTextArea.setText(DistributedPeristenceServerService.getInstance().getReportByCallId(this.callId).getReportString());
+        auditLogjTextArea.setText(persistenceService.loadReport(this.callId).getReportString());
 
         jButton1.setText("Refresh");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -173,7 +189,7 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 413, Short.MAX_VALUE)
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 464, Short.MAX_VALUE)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addComponent(jButton1)
                 .addContainerGap())
@@ -184,30 +200,28 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jButton1)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
-        jTabbedPane.addTab("Live Report", jPanel3);
+        jEmergencyTabbedPane.addTab("Live Report", jPanel3);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 434, Short.MAX_VALUE)
+            .addComponent(jEmergencyTabbedPane)
             .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, 299, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap()
+                .addComponent(jEmergencyTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, 291, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
-
-    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
-        this.loadMapImage();
-    }//GEN-LAST:event_btnClearActionPerformed
 
     private void btnClear1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClear1ActionPerformed
         this.alerts.clear();
@@ -216,22 +230,25 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_btnClear1ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        
-        auditLogjTextArea.setText(DistributedPeristenceServerService.getInstance().getReportByCallId(this.callId).getReportString());
-        
-}//GEN-LAST:event_jButton1ActionPerformed
+        System.out.println("Get REPORT FOR CALL ID="+this.callId);
+        auditLogjTextArea.setText(persistenceService.loadReport(this.callId).getReportString());
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
+
+        this.loadMapImage();     }//GEN-LAST:event_btnClearActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea auditLogjTextArea;
     private javax.swing.JButton btnClear;
     private javax.swing.JButton btnClear1;
     private javax.swing.JButton jButton1;
+    private javax.swing.JTabbedPane jEmergencyTabbedPane;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JTabbedPane jTabbedPane;
     private javax.swing.JLabel lblMap;
     private javax.swing.JList lstAlerts;
     // End of variables declaration//GEN-END:variables
@@ -241,7 +258,8 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
 
             @Override
             public void handleMessage(VehicleHitsCornerMessage message) {
-                if (message.getCallId().equals(callId)) {
+                System.out.println("CallId = "+callId +" -> Vehicle Id= "+message.getVehicleId());
+                if (message.getEmergencyId().equals(callId)) {
                     paintVehiclePosition(message.getVehicleId(), message.getCornerX(), message.getCornerY());
                 }
             }
@@ -251,7 +269,7 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
 
             @Override
             public void handleMessage(HeartBeatMessage message) {
-                if (message.getCallId().equals(callId)) {
+                if (message.getEmergencyId().equals(emergencyId)) {
                     processHeartBeat(message.getVehicleId(), message.getHeartBeatValue(), message.getTime());
                 }
             }
@@ -261,14 +279,14 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
 
             @Override
             public void handleMessage(PatientMonitorAlertMessage message) {
-                if (message.getCallId().equals(callId)) {
-                    processPatientAlert(message.getVehicleId(), message.getTime(), message.getMessage());
+                if (message.getEmergencyId().equals(emergencyId)) {
+                    addAlert(message.getVehicleId(), message.getTime(), message.getMessage());
                 }
             }
         });
 
         //Vehicle Hits an Emergency Selected Worker
-        vehicleHitsEmergencyWorker = new MessageConsumerWorker("vehicleHitsEmergencyMonitorPanel"+callId, new MessageConsumerWorkerHandler<VehicleHitsEmergencyMessage>() {
+        vehicleHitsEmergencyWorker = new MessageConsumerWorker("vehicleHitsEmergencyMonitorPanel" + callId, new MessageConsumerWorkerHandler<VehicleHitsEmergencyMessage>() {
 
             @Override
             public void handleMessage(VehicleHitsEmergencyMessage vehicleHitsEmergencyMessage) {
@@ -279,7 +297,7 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
 
 
         //Vehicle Hits an Hospital Selected Worker
-        vehicleHitsHospitalWorker = new MessageConsumerWorker("vehicleHitsHospitalMonitorPanel"+callId, new MessageConsumerWorkerHandler<VehicleHitsHospitalMessage>() {
+        vehicleHitsHospitalWorker = new MessageConsumerWorker("vehicleHitsHospitalMonitorPanel" + callId, new MessageConsumerWorkerHandler<VehicleHitsHospitalMessage>() {
 
             @Override
             public void handleMessage(VehicleHitsHospitalMessage vehicleHitsHospitalMessage) {
@@ -288,17 +306,62 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
             }
         });
 
+
+        waterTankDecreaseWorker = new MessageConsumerWorker("FTwaterDecreaseMonitor"+callId, new MessageConsumerWorkerHandler<FireTruckDecreaseWaterLevelMessage>() {
+
+            @Override
+            public void handleMessage(FireTruckDecreaseWaterLevelMessage message) {
+                if (message.getEmergencyId().equals(emergencyId)) {
+                    getFireTruckPanel(message.getVehicleId()).decreaseWaterLevel();
+                }
+            }
+        });
+        outOfWaterWorker = new MessageConsumerWorker("FTOutOfWaterMonitor"+callId, new MessageConsumerWorkerHandler<FireTruckOutOfWaterMessage>() {
+
+            @Override
+            public void handleMessage(FireTruckOutOfWaterMessage message) {
+                if (message.getEmergencyId().equals(emergencyId)) {
+                    getFireTruckPanel(message.getVehicleId()).fireTruckOutOfWater();
+                }
+            }
+        });
+
+        waterPumpTiltWorker = new MessageConsumerWorker("FTTiltMonitor"+callId, new MessageConsumerWorkerHandler<FireTruckWaterPumpTiltMessage>() {
+
+            @Override
+            public void handleMessage(FireTruckWaterPumpTiltMessage message) {
+                if (message.getEmergencyId().equals(emergencyId)) {
+                    getFireTruckPanel(message.getVehicleId()).waterPumpOverHeat();
+                }
+            }
+        });
+        
+         waterRefillWorker = new MessageConsumerWorker("FTWaterRefillMonitor"+callId, new MessageConsumerWorkerHandler<FireTruckWaterRefilledMessage>() {
+
+            @Override
+            public void handleMessage(FireTruckWaterRefilledMessage message) {
+                if (message.getEmergencyId().equals(emergencyId)) {
+                    getFireTruckPanel(message.getVehicleId()).waterRefilled();
+                }
+            }
+        });
+         
+        waterRefillWorker.start();
+        waterPumpTiltWorker.start();
+        outOfWaterWorker.start();
+        waterTankDecreaseWorker.start();
+
         vehicleHitsEmergencyWorker.start();
         vehicleHitsHospitalWorker.start();
         patientMonitorAlertWorker.start();
         gpsWorker.start();
         heartBeatWorker.start();
     }
-    private Map<Long, Point> lastVehiclePosition = new HashMap<Long, Point>();
-    private Map<Long, Color> vehicleColors = new HashMap<Long, Color>();
+    private Map<String, Point> lastVehiclePosition = new HashMap<String, Point>();
+    private Map<String, Color> vehicleColors = new HashMap<String, Color>();
     private Color[] colors = {Color.BLUE, Color.YELLOW, Color.RED, Color.GREEN, Color.ORANGE, Color.PINK};
 
-    private void paintVehiclePosition(Long vehicleId, int x, int y) {
+    private void paintVehiclePosition(String vehicleId, int x, int y) {
         x = x / 2;
         y = y / 2;
 
@@ -321,7 +384,18 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
     public void cleanupPanel() {
 
         stopPulseEmulator = true;
-
+        if (waterRefillWorker != null) {
+            waterRefillWorker.stopWorker();
+        }
+        if (waterPumpTiltWorker != null) {
+            waterPumpTiltWorker.stopWorker();
+        }
+        if (outOfWaterWorker != null) {
+            outOfWaterWorker.stopWorker();
+        }
+        if (waterTankDecreaseWorker != null) {
+            waterTankDecreaseWorker.stopWorker();
+        }
         if (vehicleHitsEmergencyWorker != null) {
             vehicleHitsEmergencyWorker.stopWorker();
         }
@@ -343,9 +417,9 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
         map = new ImageIcon(this.getClass().getClassLoader().getResource("data/png/CityMap.png"));
         this.lblMap.setIcon(map);
     }
-    private Map<Long, HeartBeatWidget> heartBeatWidgets = new ConcurrentHashMap<Long, HeartBeatWidget>();
+    private Map<String, HeartBeatWidget> heartBeatWidgets = new ConcurrentHashMap<String, HeartBeatWidget>();
 
-    private void processHeartBeat(Long vehicleId, double heartBeatValue, Date time) {
+    private void processHeartBeat(String vehicleId, double heartBeatValue, Date time) {
         //only if the vehicle already hit the emergency, but it doesnt
         //hit the hospital yet;
         Boolean hitEmergency = vehicleHitEmergency.get(vehicleId);
@@ -354,30 +428,31 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
         if (hitEmergency == null) {
             hitEmergency = false;
         }
-        
+
         if (hitHospital == null) {
             hitHospital = false;
         }
 
-        if (!hitEmergency){
-            return;
-        }
-        
-        if (hitHospital){
+        if (!hitEmergency) {
             return;
         }
 
+        if (hitHospital) {
+            return;
+        }
+
+
         if (!heartBeatWidgets.containsKey(vehicleId)) {
             HeartBeatWidget widget = new HeartBeatWidget();
-            jTabbedPane.add("Ambulance " + vehicleId, widget.getChartPanel());
-            jTabbedPane.setSelectedComponent(widget.getChartPanel());
+            jEmergencyTabbedPane.add("Ambulance " + vehicleId, widget.getChartPanel());
+            jEmergencyTabbedPane.setSelectedComponent(widget.getChartPanel());
             heartBeatWidgets.put(vehicleId, widget);
         }
 
         heartBeatWidgets.get(vehicleId).updateMonitorGraph(heartBeatValue);
     }
 
-    private void processPatientAlert(Long vehicleId, Date time, String message) {
+    public void addAlert(String vehicleId, Date time, String message) {
         alerts.add(0, vehicleId + " - " + message);
 
         DefaultListModel model = new DefaultListModel();
@@ -387,8 +462,6 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
         lstAlerts.setModel(model);
         this.validate();
     }
-
-    
     private boolean stopPulseEmulator = false;
 
     private void startPulseEmulator() {
@@ -398,19 +471,32 @@ public class EmergencyMonitorPanel extends javax.swing.JPanel {
             public void run() {
                 while (!stopPulseEmulator) {
                     try {
-                        for (Long vehicleId : heartBeatWidgets.keySet()) {
+                        for (String vehicleId : heartBeatWidgets.keySet()) {
                             try {
-                                MessageFactory.sendMessage(new HeartBeatMessage(callId, vehicleId, 0, new Date()));
+                                MessageFactory.sendMessage(new HeartBeatMessage(emergencyId, vehicleId, 0, new Date()));
                             } catch (HornetQException ex) {
                                 Logger.getLogger(EmergencyMonitorPanel.class.getName()).log(Level.SEVERE, null, ex);
                             }
                         }
                         Thread.sleep(1000);
+
+
                     } catch (InterruptedException ex) {
                         Logger.getLogger(EmergencyMonitorPanel.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
         }.start();
+    }
+    
+    private FireTruckStatusJPanel getFireTruckPanel(String vehicleId){
+        if(fireTruckPanels.get(vehicleId) == null){
+            FireTruckStatusJPanel fireTruckStatusJPanel = new FireTruckStatusJPanel(this, vehicleId);
+            fireTruckPanels.put(vehicleId,fireTruckStatusJPanel);
+            jEmergencyTabbedPane.add(fireTruckStatusJPanel);
+            jEmergencyTabbedPane.setSelectedComponent(fireTruckStatusJPanel);
+        }
+        return fireTruckPanels.get(vehicleId);
+        
     }
 }

@@ -5,18 +5,13 @@
 
 package com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable;
 
-import org.newdawn.slick.Animation;
-import org.newdawn.slick.geom.Polygon;
-
 /**
  *
  * @author esteban
  */
 public abstract class GraphicableVehicle implements Graphicable {
     private boolean isCollidingWithACorner;
-    private boolean isCollidingWithAnEmergency;
-    private boolean isCollidingWithAHospital;
-    private boolean alreadyHitAnEmergency;
+    private boolean isCollidingWithABuilding;
 
     public boolean isIsCollidingWithACorner() {
         return isCollidingWithACorner;
@@ -26,28 +21,13 @@ public abstract class GraphicableVehicle implements Graphicable {
         this.isCollidingWithACorner = isCollidingWithACorner;
     }
 
-    public boolean isIsCollidingWithAHospital() {
-        return isCollidingWithAHospital;
+    public boolean isIsCollidingWithABuilding() {
+        return isCollidingWithABuilding;
     }
 
-    public void setIsCollidingWithAHospital(boolean isCollidingWithAHospital) {
-        this.isCollidingWithAHospital = isCollidingWithAHospital;
+    public void setIsCollidingWithABuilding(boolean isCollidingWithABuilding) {
+        this.isCollidingWithABuilding = isCollidingWithABuilding;
     }
 
-    public boolean isIsCollidingWithAnEmergency() {
-        return isCollidingWithAnEmergency;
-    }
-
-    public void setIsCollidingWithAnEmergency(boolean isCollidingWithAnEmergency) {
-        this.isCollidingWithAnEmergency = isCollidingWithAnEmergency;
-    }
-
-    public boolean isAlreadyHitAnEmergency() {
-        return alreadyHitAnEmergency;
-    }
-
-    public void setAlreadyHitAnEmergency(boolean alreadyHitAnEmergency) {
-        this.alreadyHitAnEmergency = alreadyHitAnEmergency;
-    }
     
 }

@@ -1,6 +1,8 @@
 package com.wordpress.salaboy.emergencyservice.web.task.external;
 
-import com.wordpress.salaboy.model.serviceclient.DistributedPeristenceServerService;
+
+import com.wordpress.salaboy.model.serviceclient.PersistenceService;
+import com.wordpress.salaboy.model.serviceclient.PersistenceServiceProvider;
 
 /**
  * Represents the distributed service. This adapts the
@@ -12,16 +14,14 @@ import com.wordpress.salaboy.model.serviceclient.DistributedPeristenceServerServ
  */
 public class DistributedService {
 
-	private DistributedPeristenceServerService distributedService = DistributedPeristenceServerService
-			.getInstance();
+	private PersistenceService distributedService;
 
-	public DistributedPeristenceServerService getDistributedService() {
-		return distributedService;
+	public DistributedService() {
+            distributedService = PersistenceServiceProvider.getPersistenceService();
 	}
-
-	public void setDistributedService(
-			DistributedPeristenceServerService distributedService) {
-		this.distributedService = distributedService;
+        
+	public PersistenceService getDistributedService() {
+            return distributedService;
 	}
 
 }

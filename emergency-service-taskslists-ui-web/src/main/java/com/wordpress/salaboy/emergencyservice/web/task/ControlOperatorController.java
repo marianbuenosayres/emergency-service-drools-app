@@ -23,7 +23,7 @@ import com.wordpress.salaboy.model.SelectedProcedures;
 public class ControlOperatorController extends AbstractTaskFormController {
 	@Override
 	protected void addCustomFormLogic(Model model) {
-		this.emergencyId = (Integer) this.taskInfo.get("EmergencyId");
+		this.emergencyId = (String)this.taskInfo.get("EmergencyId");
 		this.taskInfo.remove("EmergencyId");
 		model.addAttribute("suggestedProcedure", this
 				.getCleanSuggestedProcedure((String) this.taskInfo
@@ -32,7 +32,7 @@ public class ControlOperatorController extends AbstractTaskFormController {
 
 	}
 
-	private String getCleanSuggestedProcedure(String suggestedProceduresString) {
+	private String[] getCleanSuggestedProcedure(String suggestedProceduresString) {
 		suggestedProceduresString = suggestedProceduresString.trim();
 		if (suggestedProceduresString.startsWith("[")) {
 			suggestedProceduresString = suggestedProceduresString.substring(1);
@@ -42,7 +42,7 @@ public class ControlOperatorController extends AbstractTaskFormController {
 					suggestedProceduresString.length() - 1);
 		}
 		suggestedProceduresString = suggestedProceduresString.trim();
-		return suggestedProceduresString.split(":")[0].trim();
+		return suggestedProceduresString.split(":");
 	}
 
 	@Override
@@ -63,7 +63,7 @@ public class ControlOperatorController extends AbstractTaskFormController {
 		super();
 	}
 
-	private Integer emergencyId;
+	private String emergencyId;
 
 	@Override
 	@RequestMapping(value = "/task/co/{entity}/{profile}/{id}/{name}", method = RequestMethod.GET)
@@ -98,10 +98,13 @@ public class ControlOperatorController extends AbstractTaskFormController {
 	protected Map<String, Object> generateOutputForForm(String form,
 			Map<String, String> data) {
 		Map<String, Object> info = new HashMap<String, Object>();
-		SelectedProcedures selectedProcedures = new SelectedProcedures(
-				Long.parseLong(emergencyId.toString()));
-		selectedProcedures.addSelectedProcedureName(data
-				.get("Suggested Procedures"));
+		SelectedProcedures selectedProcedures = new SelectedProcedures(emergencyId);
+		String[] sps =data.get("Suggested Procedures").substring(1).split("_");
+		for (String string : sps) {
+			if (string != null && string != "") {
+				selectedProcedures.addSelectedProcedureName(string);				
+			}
+		}
 		info.put("selectedProcedures", selectedProcedures);
 		return info;
 	}

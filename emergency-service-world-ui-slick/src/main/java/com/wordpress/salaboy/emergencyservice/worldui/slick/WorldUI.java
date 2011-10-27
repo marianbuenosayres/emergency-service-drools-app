@@ -1,9 +1,12 @@
 package com.wordpress.salaboy.emergencyservice.worldui.slick;
 
+import com.wordpress.salaboy.context.tracking.ContextTrackingProvider;
+import com.wordpress.salaboy.context.tracking.ContextTrackingService;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.listener.WorldMouseListener;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.listener.WorldKeyListener;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableEmergency;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.AnimationFactory;
+import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableEmergencyStatus;
 import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableFactory;
 import com.wordpress.salaboy.messaging.MessageConsumerWorker;
 import com.wordpress.salaboy.messaging.MessageConsumerWorkerHandler;
@@ -25,12 +28,14 @@ import org.newdawn.slick.SlickException;
 import org.newdawn.slick.SpriteSheet;
 import org.newdawn.slick.opengl.renderer.Renderer;
 import com.wordpress.salaboy.model.Call;
+import com.wordpress.salaboy.model.Emergency;
+import com.wordpress.salaboy.model.Emergency.EmergencyType;
+import com.wordpress.salaboy.model.FirefightersDepartment;
 import com.wordpress.salaboy.model.command.Command;
-import com.wordpress.salaboy.model.messages.EmergencyDetailsMessage;
-import com.wordpress.salaboy.model.messages.HospitalSelectedMessage;
-import com.wordpress.salaboy.model.messages.IncomingCallMessage;
-import com.wordpress.salaboy.model.messages.VehicleDispatchedMessage;
-import com.wordpress.salaboy.model.serviceclient.DistributedPeristenceServerService;
+import com.wordpress.salaboy.model.messages.*;
+import com.wordpress.salaboy.model.serviceclient.PersistenceService;
+import com.wordpress.salaboy.model.serviceclient.PersistenceServiceProvider;
+import java.io.IOException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,12 +48,14 @@ public class WorldUI extends BasicGame {
     // Places for emergencies
     private int[] xs = new int[]{1, 7, 13, 19, 25, 31, 37};
     private int[] ys = new int[]{1, 7, 13, 19, 25};
-    private Map<Long, GraphicableEmergency> emergencies = new HashMap<Long, GraphicableEmergency>();
+    private Map<String, GraphicableEmergency> emergencies = new HashMap<String, GraphicableEmergency>();
     public static SpriteSheet hospitalSheet;
-    private List<Command> renderCommands = Collections.synchronizedList(new ArrayList<Command>());
+    private final List<Command> renderCommands = Collections.synchronizedList(new ArrayList<Command>());
     private EmergencyRenderer currentRenderer;
     private GlobalEmergenciesRenderer globalRenderer;
-    private Map<Long, ParticularEmergencyRenderer> renderers = new HashMap<Long, ParticularEmergencyRenderer>();
+    private Map<String, ParticularEmergencyRenderer> renderers = new HashMap<String, ParticularEmergencyRenderer>();
+    private PersistenceService persistenceService;
+    private ContextTrackingService trackingService;
 
     public WorldUI() {
         super("City Map");
@@ -60,9 +67,9 @@ public class WorldUI extends BasicGame {
     public void init(GameContainer gc)
             throws SlickException {
         gc.setVSync(true);
-        gc.setAlwaysRender(true);
+       // gc.setAlwaysRender(true);
 
-       // hospitalSheet = new SpriteSheet("data/sprites/hospital-brillando.png", 64, 80, Color.magenta);
+       
 
         map = new BlockMap("data/cityMap.tmx");
 
@@ -75,8 +82,8 @@ public class WorldUI extends BasicGame {
         gc.getInput().addKeyListener(new WorldKeyListener(this));
         gc.getInput().addMouseListener(new WorldMouseListener(this));
         
-        //Initializing Distribtued Persistence Service
-        DistributedPeristenceServerService.getInstance();
+        persistenceService = PersistenceServiceProvider.getPersistenceService();
+        trackingService = ContextTrackingProvider.getTrackingService();
         
         registerMessageConsumers();
 
@@ -91,14 +98,15 @@ public class WorldUI extends BasicGame {
     @Override
     public void render(GameContainer gc, Graphics g)
             throws SlickException {
-
-        //Execute any renderCommands
-        for (Command command : this.renderCommands) {
-            command.execute();
+        
+        synchronized (this.renderCommands){
+            //Execute any renderCommands
+            for (Command command : this.renderCommands) {
+                command.execute();
+            }
+            //clear the renderCommands list
+            renderCommands.clear();
         }
-        //clear the renderCommands list
-        renderCommands.clear();
-
         this.currentRenderer.renderPolygon(gc, g);
 
         BlockMap.tmap.render(0, 0, 0, 0, BlockMap.tmap.getWidth(), BlockMap.tmap.getHeight(), 1, true);
@@ -106,6 +114,8 @@ public class WorldUI extends BasicGame {
         this.currentRenderer.renderAnimation(gc, g);
 
         BlockMap.tmap.render(0, 0, 0, 0, BlockMap.tmap.getWidth(), BlockMap.tmap.getHeight(), 2, true);
+        
+        this.currentRenderer.renderHighlightsAnimation(gc, g);
 
     }
 
@@ -125,7 +135,7 @@ public class WorldUI extends BasicGame {
 
     }
 
-    public synchronized void removeEmergency(long callId) {
+    public synchronized void removeEmergency(String callId) {
         this.emergencies.remove(callId);
     }
 
@@ -140,11 +150,13 @@ public class WorldUI extends BasicGame {
 
                     public void execute() {
                         System.out.println("EmergencyDetailsMessage received");
-                        if (emergencies.get(message.getCallId())==null){
-                            System.out.println("Unknown emergency for call Id "+message.getCallId());
+                        if (emergencies.get(message.getEmergency().getCall().getId())==null){
+                            System.out.println("Unknown emergency for call "+message.getEmergency().getCall().getId());
                             return;
                         }
-                        emergencies.get(message.getCallId()).setAnimation(AnimationFactory.getEmergencyAnimation(message.getType(), message.getNumberOfPeople()));
+                        
+                        emergencies.get(message.getEmergency().getCall().getId()).setAnimation(AnimationFactory.getEmergencyAnimation(message.getType(), message.getNumberOfPeople()));
+                        notifyAboutEmergencyStatusChange(message.getEmergency().getCall().getId(), message.getRemaining());
                     }
                 });
             }
@@ -154,13 +166,19 @@ public class WorldUI extends BasicGame {
 
             @Override
             public void handleMessage(final VehicleDispatchedMessage message) {
-                if (emergencies.get(message.getCallId())==null){
-                    System.out.println("Unknown emergency for call Id "+message.getCallId());
-                    return;
+                String callId = trackingService.getCallAttachedToEmergency(message.getEmergencyId());
+                
+                if (callId == null){
+                    throw new IllegalArgumentException("No Call attached to Emergency "+message.getEmergencyId());
                 }
-                Vehicle vehicle = DistributedPeristenceServerService.getInstance().loadVehicle(message.getVehicleId());
-                switchToEmergency(message.getCallId());
-                assignVehicleToEmergency(message.getCallId(), vehicle);
+                
+                if (emergencies.get(callId)==null){
+                    throw new IllegalArgumentException("Unknown emergency for call Id "+callId);
+                }
+                
+                Vehicle vehicle = persistenceService.loadVehicle(message.getVehicleId());
+                switchToEmergency(callId);
+                assignVehicleToEmergency(callId, vehicle);
             }
         });
 
@@ -185,12 +203,132 @@ public class WorldUI extends BasicGame {
                 });
             }
         });
+        
+        MessageConsumerWorker firefigthersDepartmentWorker = new MessageConsumerWorker("firefigthersDepartmentWorldUI", new MessageConsumerWorkerHandler<FirefightersDepartmentSelectedMessage>() {
+
+            @Override
+            public void handleMessage(final FirefightersDepartmentSelectedMessage message) {
+                //Changes emergency animation
+                renderCommands.add(new Command() {
+
+                    public void execute() {
+                       
+                        if (emergencies.get(message.getCallId())==null){
+                            System.out.println("Unknown emergency for call Id "+message.getCallId());
+                            return;
+                        }
+                        selectFirefighterDepartmentForEmergency(message.getCallId(), message.getFirefightersDepartment());
+                        
+                    }
+
+                });
+            }
+        });
+        
+        MessageConsumerWorker fireTruckOutOfWaterWorker = new MessageConsumerWorker("fireTruckOutOfWaterWorkerUI", new MessageConsumerWorkerHandler<FireTruckOutOfWaterMessage>() {
+
+            @Override
+            public void handleMessage(final FireTruckOutOfWaterMessage message) {
+                //Changes emergency animation
+                renderCommands.add(new Command() {
+
+                    @Override
+                    public void execute() {
+                        String callId = trackingService.getCallAttachedToEmergency(message.getEmergencyId());
+                        
+                        if (callId == null){
+                            System.out.println("The emergency "+message.getEmergencyId()+" doesn't have any associated call!");
+                            return;
+                        }
+                        if (emergencies.get(callId)==null){
+                            System.out.println("Unknown emergency for call Id "+callId);
+                            return;
+                        }
+                        
+                        notifyAboutFireTruckOutOfWaterToEmergency(callId, message.getVehicleId());
+                        
+                    }
+
+                });
+            }
+        });
+        
+        
+        MessageConsumerWorker fireTruckWaterRefilledWorker = new MessageConsumerWorker("fireTruckWaterRefilledWorkerUI", new MessageConsumerWorkerHandler<FireTruckWaterRefilledMessage>() {
+
+            @Override
+            public void handleMessage(final FireTruckWaterRefilledMessage message) {
+                //Changes emergency animation
+                renderCommands.add(new Command() {
+
+                    @Override
+                    public void execute() {
+                        String callId = trackingService.getCallAttachedToEmergency(message.getEmergencyId());
+                        
+                        if (callId == null){
+                            System.out.println("The emergency "+message.getEmergencyId()+" doesn't have any associated call!");
+                            return;
+                        }
+                        if (emergencies.get(callId)==null){
+                            System.out.println("Unknown emergency for call Id "+callId);
+                            return;
+                        }
+                        
+                        notifyAboutFireTruckWaterRefilledToEmergency(callId, message.getVehicleId());
+                        
+                    }
+
+                });
+            }
+        });
+        
         hospitalSelectedWorker.start();
         emergencyDetailsWorker.start();
         vehicleDispatchedWorker.start();
+        firefigthersDepartmentWorker.start();
+        fireTruckOutOfWaterWorker.start();
+        fireTruckWaterRefilledWorker.start();
     }
 
-    public void addRandomEmergency() {
+    
+    public void addRandomGenericEmergency() throws IOException {
+        this.addRandomEmergency(Emergency.EmergencyType.UNDEFINED, null);
+
+    }
+    public void addXYEmergency( int x, int y){
+        addXYEmergency(EmergencyType.UNDEFINED, null, x, y);
+    }
+    public void addXYEmergency(EmergencyType type,Integer nroOfPeople, int x, int y){
+        
+        System.out.println("x = " + xs[x] + " -> y =" + ys[y]);
+        Call call = new Call(x, y, new Date(System.currentTimeMillis()));
+        
+        PersistenceServiceProvider.getPersistenceService().storeCall(call); 
+        
+        int callSquare[] = {1, 1, 31, 1, 31, 31, 1, 31};
+        BlockMap.emergencies.add(new Block(xs[call.getX()] * 16, ys[call.getY()] * 16, callSquare, "callId:" + call.getId()));
+        
+        GraphicableEmergency newEmergency = null;
+        
+        if (type == Emergency.EmergencyType.UNDEFINED){
+            newEmergency = GraphicableFactory.newGenericEmergency(call);
+            
+        }else{
+            newEmergency = GraphicableFactory.newEmergency(call, type, nroOfPeople);
+        }
+        
+        emergencies.put(call.getId(), newEmergency);
+
+        renderers.put(call.getId(), new ParticularEmergencyRenderer(this,newEmergency));
+        
+        try {
+            MessageFactory.sendMessage(new IncomingCallMessage(call));
+        } catch (HornetQException ex) {
+            Logger.getLogger(WorldUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    
+    }
+    public void addRandomEmergency(Emergency.EmergencyType emergencyType, Integer numberOfPeople) throws IOException {
         
         int randomx = 0;
         int randomy = 0;
@@ -211,33 +349,19 @@ public class WorldUI extends BasicGame {
                 }
             }
         } while (!isFreeSpace);
-        
-        System.out.println("x = " + xs[randomx] + " -> y =" + ys[randomy]);
-        Call call = new Call(randomx, randomy, new Date(System.currentTimeMillis()));
-        int callSquare[] = {1, 1, 31, 1, 31, 31, 1, 31};
-        BlockMap.emergencies.add(new Block(xs[call.getX()] * 16, ys[call.getY()] * 16, callSquare, "callId:" + call.getId()));
-        
-        GraphicableEmergency newEmergency = GraphicableFactory.newEmergency(call);
-        emergencies.put(call.getId(), newEmergency);
-
-        renderers.put(call.getId(), new ParticularEmergencyRenderer(this,newEmergency));
-        
-        try {
-            MessageFactory.sendMessage(new IncomingCallMessage(call));
-        } catch (HornetQException ex) {
-            Logger.getLogger(WorldUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        addXYEmergency(emergencyType, numberOfPeople,randomx, randomy);
+       
     }
 
-    public Map<Long, GraphicableEmergency> getEmergencies() {
+    public Map<String, GraphicableEmergency> getEmergencies() {
         return emergencies;
     }
 
-    public void emergencyClicked(Long callId) {
+    public void emergencyClicked(String callId) {
         this.switchToEmergency(callId);
     }
     
-    private void switchToEmergency(Long callId){
+    private void switchToEmergency(String callId){
         this.currentRenderer = renderers.get(callId);
     }
     
@@ -245,7 +369,7 @@ public class WorldUI extends BasicGame {
         this.currentRenderer = this.globalRenderer;
     }
     
-    public void assignVehicleToEmergency(long callId, Vehicle vehicle){
+    public void assignVehicleToEmergency(String callId, Vehicle vehicle){
         this.renderers.get(callId).addVehicle(vehicle);
     }
 
@@ -253,9 +377,40 @@ public class WorldUI extends BasicGame {
         return currentRenderer;
     }
     
-    public void selectHospitalForEmergency(Long callId, Hospital hospital) {
+    public void selectHospitalForEmergency(String callId, Hospital hospital) {
         this.renderers.get(callId).selectHospital(hospital);               
     }
+    
+    public void selectFirefighterDepartmentForEmergency(String callId, FirefightersDepartment firefigthersDepartment) {
+        this.renderers.get(callId).selectFirefighterDepartment(firefigthersDepartment);               
+    }
+    
+    public void notifyAboutFireTruckOutOfWaterToEmergency(String callId, String vehicleId){
+        this.renderers.get(callId).onFireTruckOutOfWater(vehicleId);
+    }
+    
+    public void notifyAboutFireTruckWaterRefilledToEmergency(String callId, String vehicleId){
+        this.renderers.get(callId).onFireTruckWaterRefilled(vehicleId);
+    }
+    
+    public void notifyAboutEmergencyStatusChange(String callId, int remaining){
+        this.renderers.get(callId).updateStatus(remaining);
+    }
+
+    public PersistenceService getPersistenceService() {
+        return persistenceService;
+    }
+
+    public ContextTrackingService getTrackingService() {
+        return trackingService;
+    }
+
+    public void addRenderCommand(Command element) {
+        synchronized (renderCommands){
+            renderCommands.add(element);
+        }
+    }
+    
     
     
 }

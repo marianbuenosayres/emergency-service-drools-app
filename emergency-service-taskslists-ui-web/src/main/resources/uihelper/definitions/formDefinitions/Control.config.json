@@ -31,12 +31,8 @@
             "sourceExpresion":"#{in:emergency.nroOfPeople}"
          },
          {
-            "name":"Age",
-            "sourceExpresion":"#{in:patient.age}"
-         },
-         {
-            "name":"Gender",
-            "sourceExpresion":"#{in:patient.gender}"
+            "name":"Patients",
+            "sourceExpresion":"#{in:activePatients.activePatients}"
          },
          {
             "name":"EmergencyId",
@@ -50,7 +46,7 @@
      "outputFields": [
          {
             "name":"Suggested Procedures",
-            "sourceExpresion":"[DefaultHeartAttackProcedure,DefaultFireAttachProcedure,DefaultPoliceAttachProcedure]"
+            "sourceExpresion":"[DefaultHeartAttackProcedure,DefaultFireProcedure,DefaultPoliceProcedure]"
          }
      ]
  }

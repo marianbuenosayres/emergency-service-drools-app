@@ -1,6 +1,6 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * To change this template, choose Tools | Templates and open the template in
+ * the editor.
  */
 
 /*
@@ -10,16 +10,20 @@
  */
 package com.wordpress.salaboy.emergencyservice.dashboard;
 
+import com.wordpress.salaboy.context.tracking.ContextTrackingProvider;
+import com.wordpress.salaboy.context.tracking.ContextTrackingService;
+import com.wordpress.salaboy.messaging.MessageConsumerWorker;
+import com.wordpress.salaboy.messaging.MessageConsumerWorkerHandler;
 import com.wordpress.salaboy.model.Emergency;
 import com.wordpress.salaboy.model.Hospital;
-import com.wordpress.salaboy.model.serviceclient.DistributedPeristenceServerService;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import javax.swing.JFrame;
-import javax.swing.WindowConstants;
-import org.hornetq.api.core.HornetQException;
+import com.wordpress.salaboy.model.events.FireTruckDecreaseWaterLevelEvent;
+import com.wordpress.salaboy.model.events.FireTruckOutOfWaterEvent;
+import com.wordpress.salaboy.model.serviceclient.PersistenceService;
+import com.wordpress.salaboy.model.serviceclient.PersistenceServiceProvider;
+import java.io.IOException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -27,9 +31,20 @@ import org.hornetq.api.core.HornetQException;
  */
 public class EmergenciesDashboard extends javax.swing.JFrame {
 
+    private final PersistenceService persistenceService;
+    private final ContextTrackingService trackingService;
+
     /** Creates new form EmergenciesDashboard */
-    public EmergenciesDashboard() {
+    public EmergenciesDashboard() throws IOException {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("ContextTrackingImplementation", ContextTrackingProvider.ContextTrackingServiceType.IN_MEMORY);
+        persistenceService = PersistenceServiceProvider.getPersistenceService();
+
+        trackingService = ContextTrackingProvider.getTrackingService();
         initComponents();
+
+
+
     }
 
     /** This method is called from within the constructor to
@@ -46,7 +61,6 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         System.out.println(">>>>  Opening the DASHBOARD");
-        DistributedPeristenceServerService.getInstance();
         emergenciesjTable = new javax.swing.JTable();
         jPanel3 = new javax.swing.JPanel();
         refreshjButton = new javax.swing.JButton();
@@ -61,7 +75,7 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Emergencies", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION));
 
-        Collection<Emergency> emergencies = (Collection<Emergency>) DistributedPeristenceServerService.getInstance().getAllEmergencies();
+        Collection<Emergency> emergencies = (Collection<Emergency>) persistenceService.getAllEmergencies();
         System.out.println(">>>>  Emergencies Count in the DASHBOARD:"+emergencies.size());
         Object[][] emergenciesArray = new Object[emergencies.size()][4];
         Iterator<Emergency> it = emergencies.iterator();
@@ -106,7 +120,7 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
                 .add(refreshjButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 108, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(liveReportjButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 225, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(109, Short.MAX_VALUE))
+                .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -119,7 +133,7 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 454, Short.MAX_VALUE)
+            .add(jScrollPane1)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel2Layout.setVerticalGroup(
@@ -128,7 +142,7 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
                 .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 155, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(25, Short.MAX_VALUE))
+                .addContainerGap(27, Short.MAX_VALUE))
         );
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
@@ -166,7 +180,7 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
                 .add(jButton1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 109, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jButton2)
-                .addContainerGap(155, Short.MAX_VALUE))
+                .addContainerGap())
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -174,7 +188,7 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
                 .add(jPanel6Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jButton2)
                     .add(jButton1))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         hospitalsjTable.setModel(new javax.swing.table.DefaultTableModel(
@@ -202,8 +216,8 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
             .add(jPanel5Layout.createSequentialGroup()
                 .add(jScrollPane2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 141, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 66, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(30, Short.MAX_VALUE))
+                .add(jPanel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(35, Short.MAX_VALUE))
         );
 
         org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
@@ -229,77 +243,71 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 319, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void liveReportjButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_liveReportjButtonActionPerformed
-        // TODO add your handling code here:
-        int[] selected = emergenciesjTable.getSelectedRows();
-            
-           List<Long> selectedEmergencies = new ArrayList<Long>(selected.length);
-           
-            for(int i = 0; i < selected.length; i++){
-                selectedEmergencies.add((Long)emergenciesjTable.getModel().getValueAt(i, 0));
-            }
-            
-            openLiveReportPanel(selectedEmergencies);
-    }//GEN-LAST:event_liveReportjButtonActionPerformed
-
-    private void refreshjButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_refreshjButtonActionPerformed
-        // TODO add your handling code here:
-        Collection<Emergency> emergencies = (Collection<Emergency>) DistributedPeristenceServerService.getInstance().getAllEmergencies();
-        Object[][] emergenciesArray = new Object[emergencies.size()][4];
-        Iterator<Emergency> it = emergencies.iterator();
-        int i = 0;
-        while(it.hasNext()){
-            Emergency emergency = it.next();
-            emergenciesArray[i][0] = emergency.getId();
-            emergenciesArray[i][1] = emergency.getCall().getId();
-            emergenciesArray[i][2] = emergency.getType().toString();
-            emergenciesArray[i][3] = emergency.getNroOfPeople();
-            i++;
-        }
-        emergenciesjTable.setModel(new javax.swing.table.DefaultTableModel(
-                emergenciesArray,
-                new String[]{
-                    "Emergency ID", "Call ID", "Emergency Type", "People involved"
-                }));
-
-    }//GEN-LAST:event_refreshjButtonActionPerformed
-
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-         Object [][] vehicles = new Object[DistributedPeristenceServerService.getInstance().getAllHospitals().size()][2];
+
+        Object[][] vehicles = new Object[persistenceService.getAllHospitals().size()][2];
         int i = 0;
-        for(Hospital hospital : DistributedPeristenceServerService.getInstance().getAllHospitals()){
+        for (Hospital hospital : persistenceService.getAllHospitals()) {
             vehicles[i][0] = hospital.getId();
             vehicles[i][1] = hospital.getName();
             i++;
         }
-        hospitalsjTable.setModel(new javax.swing.table.DefaultTableModel(
-            vehicles,
-            new String [] {
-                "ID", "Hospital"
-            }
-        ));
-    }//GEN-LAST:event_jButton1ActionPerformed
+        hospitalsjTable.setModel(new javax.swing.table.DefaultTableModel(vehicles,
+                new String[]{"ID", "Hospital"}));
+    }
+        // TODO add your handling code here:         Object[][] vehicles = new Object[persistenceService.getAllHospitals().size()][2];         int i = 0;         for (Hospital hospital : persistenceService.getAllHospitals()) {             vehicles[i][0] = hospital.getId();             vehicles[i][1] = hospital.getName();             i++;         }         hospitalsjTable.setModel(new javax.swing.table.DefaultTableModel(                 vehicles,                 new String[]{                     "ID", "Hospital"                 }));     }//GEN-LAST:event_jButton1ActionPerformed
 
-    public static void main(String args[])  {
-        
+        private void liveReportjButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_liveReportjButtonActionPerformed
+
+        openLiveReportPanel((String) emergenciesjTable.getModel().getValueAt(emergenciesjTable.getSelectedRow(), 0));
+    }
+        // TODO add your handling code here:         int[] selected = emergenciesjTable.getSelectedRows();          List<String> selectedEmergencies = new ArrayList<String>(selected.length);          for (int i = 0; i < selected.length; i++) {             selectedEmergencies.add((String) emergenciesjTable.getModel().getValueAt(i, 0));         }          openLiveReportPanel(selectedEmergencies);     }//GEN-LAST:event_liveReportjButtonActionPerformed
+
+        private void refreshjButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_refreshjButtonActionPerformed
+            // TODO add your handling code here:
+            Collection<Emergency> emergencies = (Collection<Emergency>) persistenceService.getAllEmergencies();
+            Object[][] emergenciesArray = new Object[emergencies.size()][4];
+            Iterator<Emergency> it = emergencies.iterator();
+            int i = 0;
+            while (it.hasNext()) {
+                Emergency emergency = it.next();
+                System.out.println("Emergency -> " + emergency);
+                emergenciesArray[i][0] = emergency.getId();
+                emergenciesArray[i][1] = emergency.getCall().getId();
+                emergenciesArray[i][2] = emergency.getType().toString();
+                emergenciesArray[i][3] = emergency.getNroOfPeople();
+                i++;
+            }
+            emergenciesjTable.setModel(new javax.swing.table.DefaultTableModel(
+                    emergenciesArray,
+                    new String[]{
+                        "Emergency ID", "Call ID", "Emergency Type", "People involved"
+                    }));
+    }//GEN-LAST:event_refreshjButtonActionPerformed
+
+    public static void main(String args[]) {
+
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             @Override
             public void run() {
-                
-                new EmergenciesDashboard().setVisible(true);
-                
+                try {
+                    new EmergenciesDashboard().setVisible(true);
+
+
+                } catch (IOException ex) {
+                    Logger.getLogger(EmergenciesDashboard.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
             }
         });
     }
-   
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTable emergenciesjTable;
     private javax.swing.JTable hospitalsjTable;
@@ -318,13 +326,21 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
     private javax.swing.JButton refreshjButton;
     // End of variables declaration//GEN-END:variables
 
-    private void openLiveReportPanel(final List<Long> selectedEmergencies) {
+    private void openLiveReportPanel(final String selectedEmergency) {
         //
         java.awt.EventQueue.invokeLater(new Runnable() {
+
             public void run() {
-                new LiveEmergencyReport(selectedEmergencies.get(0)).setVisible(true);
-                
+                try {
+                    System.out.println("Creating a LiveEmergencyReport with the selected Emergency = " + selectedEmergency);
+                    new LiveEmergencyReport(selectedEmergency).setVisible(true);
+
+
+                } catch (IOException ex) {
+                    Logger.getLogger(EmergenciesDashboard.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
             }
-         });
+        });
     }
 }

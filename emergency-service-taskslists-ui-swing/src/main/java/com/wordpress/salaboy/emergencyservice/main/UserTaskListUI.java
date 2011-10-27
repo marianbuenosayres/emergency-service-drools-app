@@ -21,7 +21,6 @@ import com.wordpress.salaboy.emergencyservice.tasklists.SelectVehicleTaskListPan
 import com.wordpress.salaboy.messaging.MessageConsumerWorker;
 import com.wordpress.salaboy.messaging.MessageConsumerWorkerHandler;
 import com.wordpress.salaboy.model.messages.VehicleDispatchedMessage;
-import com.wordpress.salaboy.model.serviceclient.DistributedPeristenceServerService;
 import com.wordpress.salaboy.smarttasks.jbpm5wrapper.conf.JBPM5HornetQHumanTaskClientConfiguration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,8 +33,8 @@ import javax.swing.JTabbedPane;
 public class UserTaskListUI extends javax.swing.JFrame {
 
     private HumanTaskService humanTaskServiceClient;
-    public static Long LAST_CALL_ID = null;
-    public static Long LAST_DISPATCHED_VEHICLE_ID = null;
+    public static String LAST_CALL_ID = null;
+    public static String LAST_DISPATCHED_VEHICLE_ID = null;
     //Task Lists Panels
     private IncomingPhoneCallsTaskListPanel phoneCallsTaskListPanel;
     private ControlSuggestedProceduresTaskListPanel controlSuggestedProceduresTaskListPanel;
@@ -59,7 +58,7 @@ public class UserTaskListUI extends javax.swing.JFrame {
         this.mainJTabbedPane.add(this.doctorsUpdateTaskListPanel, 3);
         this.mainJTabbedPane.setSelectedComponent(this.phoneCallsTaskListPanel);
         
-        DistributedPeristenceServerService.getInstance();
+        
 
 
     }
@@ -270,7 +269,8 @@ public class UserTaskListUI extends javax.swing.JFrame {
             public void handleMessage(VehicleDispatchedMessage message) {
                 //store only the last vehicle and call id. This is going to
                 //be used later by the wiimote event generator.
-                LAST_CALL_ID = message.getCallId();
+                
+                //LAST_CALL_ID = message.getCallId();
                 LAST_DISPATCHED_VEHICLE_ID = message.getVehicleId();
             }
         });
