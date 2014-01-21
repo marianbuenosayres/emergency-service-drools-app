@@ -4,51 +4,35 @@
  */
 package com.wordpress.salaboy.services;
 
-import com.wordpress.salaboy.acc.FirefighterDeparmtmentDistanceCalculator;
+import java.io.IOException;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.jbpm.services.task.wih.NonManagedLocalHTWorkItemHandler;
+import org.kie.api.KieBase;
+import org.kie.api.KieBaseConfiguration;
+import org.kie.api.KieServices;
+import org.kie.api.builder.KieBuilder;
+import org.kie.api.builder.KieFileSystem;
+import org.kie.api.builder.Message;
+import org.kie.api.builder.Results;
+import org.kie.api.conf.EventProcessingOption;
+import org.kie.api.event.KieRuntimeEventManager;
+import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.internal.io.ResourceFactory;
+
 import com.wordpress.salaboy.model.Procedure;
-import com.wordpress.salaboy.model.events.*;
+import com.wordpress.salaboy.model.events.EmergencyEndsEvent;
+import com.wordpress.salaboy.model.events.FireExtinctedEvent;
+import com.wordpress.salaboy.model.events.FireTruckOutOfWaterEvent;
+import com.wordpress.salaboy.model.events.VehicleHitsEmergencyEvent;
+import com.wordpress.salaboy.model.events.VehicleHitsFireDepartmentEvent;
 import com.wordpress.salaboy.services.workitemhandlers.ProcedureReportWorkItemHandler;
 import com.wordpress.salaboy.workitemhandlers.DispatchVehicleWorkItemHandler;
 import com.wordpress.salaboy.workitemhandlers.NotifyEndOfProcedureWorkItemHandler;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.io.IOUtils;
-import org.drools.KnowledgeBase;
-import org.drools.KnowledgeBaseConfiguration;
-import org.drools.KnowledgeBaseFactory;
-import org.drools.KnowledgeBaseFactoryService;
-import org.drools.builder.KnowledgeBuilder;
-import org.drools.builder.KnowledgeBuilderConfiguration;
-import org.drools.builder.KnowledgeBuilderError;
-import org.drools.builder.KnowledgeBuilderErrors;
-import org.drools.builder.KnowledgeBuilderFactory;
-import org.drools.builder.KnowledgeBuilderFactoryService;
-import org.drools.builder.ResourceType;
-import org.drools.builder.conf.AccumulateFunctionOption;
-import org.drools.conf.EventProcessingOption;
-import org.drools.grid.ConnectionFactoryService;
-import org.drools.grid.GridConnection;
-import org.drools.grid.GridNode;
-import org.drools.grid.GridServiceDescription;
-import org.drools.grid.conf.GridPeerServiceConfiguration;
-import org.drools.grid.conf.impl.GridPeerConfiguration;
-import org.drools.grid.impl.GridImpl;
-import org.drools.grid.service.directory.Address;
-import org.drools.grid.service.directory.WhitePages;
-import org.drools.grid.service.directory.impl.CoreServicesLookupConfiguration;
-import org.drools.grid.service.directory.impl.GridServiceDescriptionImpl;
-import org.drools.grid.service.directory.impl.WhitePagesRemoteConfiguration;
-import org.drools.io.impl.ByteArrayResource;
-import org.drools.io.impl.ClassPathResource;
-import org.drools.logger.KnowledgeRuntimeLoggerFactory;
-import org.drools.runtime.StatefulKnowledgeSession;
-import org.drools.runtime.process.ProcessInstance;
-import org.jbpm.task.service.hornetq.CommandBasedHornetQWSHumanTaskHandler;
 
 /**
  *
@@ -56,96 +40,53 @@ import org.jbpm.task.service.hornetq.CommandBasedHornetQWSHumanTaskHandler;
  */
 public class DefaultFireProcedureImpl implements DefaultFireProcedure {
     private String emergencyId;
-    private StatefulKnowledgeSession internalSession;
+    private KieSession internalSession;
     private String procedureName;
-    private boolean useLocalKSession;
     private ProcessInstance processInstance;
 
     public DefaultFireProcedureImpl() {
         this.procedureName = "com.wordpress.salaboy.bpmn2.DefaultFireProcedure";
     }
 
-    private StatefulKnowledgeSession createDefaultFireProcedureSession(String emergencyId) throws IOException {
+    private KieSession createDefaultFireProcedureSession(String emergencyId) throws IOException {
         System.out.println(">>>> I'm creating the DefaultFireProcedure procedure for emergencyId = "+emergencyId);
-        GridNode remoteN1 = null;
+
+        KieServices ks = KieServices.Factory.get();
+        KieFileSystem kfs = ks.newKieFileSystem();
         
-        KnowledgeBuilder kbuilder = null;
-        KnowledgeBase kbase = null;
-        if (useLocalKSession) {
-            KnowledgeBuilderConfiguration kbuilderConf = KnowledgeBuilderFactory.newKnowledgeBuilderConfiguration();
-            kbuilderConf.setOption(AccumulateFunctionOption.get("firefighterDeparmtmentDistanceCalculator", new FirefighterDeparmtmentDistanceCalculator()));
-            kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder(kbuilderConf);
-            KnowledgeBaseConfiguration kbaseConf = KnowledgeBaseFactory.newKnowledgeBaseConfiguration();
-            kbaseConf.setOption(EventProcessingOption.STREAM);
-            kbase = KnowledgeBaseFactory.newKnowledgeBase(kbaseConf);
-        } else {
-            Map<String, GridServiceDescription> coreServicesMap = new HashMap<String, GridServiceDescription>();
-            GridServiceDescriptionImpl gsd = new GridServiceDescriptionImpl(WhitePages.class.getName());
-            Address addr = gsd.addAddress("socket");
-            addr.setObject(new InetSocketAddress[]{new InetSocketAddress("localhost", 8000)});
-            coreServicesMap.put(WhitePages.class.getCanonicalName(), gsd);
-
-            GridImpl grid = new GridImpl(new ConcurrentHashMap<String, Object>());
-
-            GridPeerConfiguration conf = new GridPeerConfiguration();
-            GridPeerServiceConfiguration coreSeviceConf = new CoreServicesLookupConfiguration(coreServicesMap);
-            conf.addConfiguration(coreSeviceConf);
-
-            GridPeerServiceConfiguration wprConf = new WhitePagesRemoteConfiguration();
-            conf.addConfiguration(wprConf);
-
-            conf.configure(grid);
-
-            GridServiceDescription<GridNode> n1Gsd = grid.get(WhitePages.class).lookup("n1");
-            GridConnection<GridNode> conn = grid.get(ConnectionFactoryService.class).createConnection(n1Gsd);
-            remoteN1 = conn.connect();
-
-            KnowledgeBuilderConfiguration kbuilderConf = remoteN1.get(KnowledgeBuilderFactoryService.class).newKnowledgeBuilderConfiguration();
-            kbuilderConf.setOption(AccumulateFunctionOption.get("firefighterDeparmtmentDistanceCalculator", new FirefighterDeparmtmentDistanceCalculator()));
-            kbuilder = remoteN1.get(KnowledgeBuilderFactoryService.class).newKnowledgeBuilder(kbuilderConf);
-            
-            KnowledgeBaseConfiguration kbaseConf = remoteN1.get(KnowledgeBaseFactoryService.class).newKnowledgeBaseConfiguration();
-            kbaseConf.setOption(EventProcessingOption.STREAM);
-            kbase = remoteN1.get(KnowledgeBaseFactoryService.class).newKnowledgeBase(kbaseConf);
-        }
-
-
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("processes/procedures/MultiVehicleProcedure.bpmn").getInputStream())), ResourceType.BPMN2);
+        kfs.write("src/main/resources/MultiVehicleProcedure.bpmn2", ResourceFactory.newClassPathResource("processes/procedures/MultiVehicleProcedure.bpmn"));
+        kfs.write("src/main/resources/DefaultFireProcedure.bpmn2", ResourceFactory.newClassPathResource("processes/procedures/DefaultFireProcedure.bpmn"));
+        kfs.write("src/main/resources/select_water_refill_destination.drl", ResourceFactory.newClassPathResource("rules/select_water_refill_destination.drl"));
+        kfs.write("src/main/resources/defaultFireProcedureEventHandling.drl", ResourceFactory.newClassPathResource("rules/defaultFireProcedureEventHandling.drl"));
         
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("processes/procedures/DefaultFireProcedure.bpmn").getInputStream())), ResourceType.BPMN2);
-        
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/select_water_refill_destination.drl").getInputStream())), ResourceType.DRL);
-        
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/defaultFireProcedureEventHandling.drl").getInputStream())), ResourceType.DRL);
+        KieBuilder kbuilder = ks.newKieBuilder(kfs);
+        kbuilder.buildAll();
 
-        KnowledgeBuilderErrors errors = kbuilder.getErrors();
-        if (errors != null && errors.size() > 0) {
-            for (KnowledgeBuilderError error : errors) {
-                System.out.println(">>>>>>> Error: " + error.getMessage());
-
-            }
+        Results res = kbuilder.getResults();
+        if (res != null && res.hasMessages(Message.Level.ERROR)) {
+            System.out.println(">>>>>>> Error: " + res);
             throw new IllegalStateException("Failed to parse knowledge!");
         }
+        
+        KieContainer kcontainer = ks.newKieContainer(kbuilder.getKieModule().getReleaseId());
+        KieBaseConfiguration kbaseConf = ks.newKieBaseConfiguration();
+        kbaseConf.setOption(EventProcessingOption.STREAM);
+        KieBase kbase = kcontainer.newKieBase(kbaseConf);
 
-        kbase.addKnowledgePackages(kbuilder.getKnowledgePackages());
 
-        StatefulKnowledgeSession session = kbase.newStatefulKnowledgeSession();
-        if (useLocalKSession){
-            KnowledgeRuntimeLoggerFactory.newConsoleLogger(session);
-        }
-        if (!useLocalKSession){
-            remoteN1.set("DefaultFireProcedureSession" + this.emergencyId, session);
-        }
+        KieSession session = kbase.newKieSession();
+        ks.getLoggers().newConsoleLogger((KieRuntimeEventManager) session);
 
         return session;
 
     }
 
-    private void setWorkItemHandlers(StatefulKnowledgeSession session) {
+    private void setWorkItemHandlers(KieSession session) {
         session.getWorkItemManager().registerWorkItemHandler("Report", new ProcedureReportWorkItemHandler());
         session.getWorkItemManager().registerWorkItemHandler("DispatchSelectedVehicle", new DispatchVehicleWorkItemHandler());
         session.getWorkItemManager().registerWorkItemHandler("NotifyEndOfProcedure", new NotifyEndOfProcedureWorkItemHandler());
-        session.getWorkItemManager().registerWorkItemHandler("Human Task", new CommandBasedHornetQWSHumanTaskHandler(session));
+        session.getWorkItemManager().registerWorkItemHandler("Human Task", 
+        		new NonManagedLocalHTWorkItemHandler(session, HumanTaskServerService.getInstance().getTaskService()));
 
     }
 
@@ -195,14 +136,6 @@ public class DefaultFireProcedureImpl implements DefaultFireProcedure {
     @Override
     public void procedureEndsNotification(EmergencyEndsEvent event) {
         internalSession.signalEvent("com.wordpress.salaboy.model.events.EmergencyEndsEvent", event);
-    }
-
-    public boolean isUseLocalKSession() {
-        return useLocalKSession;
-    }
-
-    public void setUseLocalKSession(boolean useLocalKSession) {
-        this.useLocalKSession = useLocalKSession;
     }
 
     @Override

@@ -18,6 +18,8 @@ import com.wordpress.salaboy.context.tracking.*;
 import com.wordpress.salaboy.model.serviceclient.*;
 import com.wordpress.salaboy.model.serviceclient.PersistenceServiceProvider.PersistenceServiceType;
 
+import accumulate com.wordpress.salaboy.acc.FirefighterDeparmtmentDistanceCalculator firefighterDeparmtmentDistanceCalculator;
+
 rule "Calculate Water Refill Location"
     ruleflow-group "closest-water-selection"
     when

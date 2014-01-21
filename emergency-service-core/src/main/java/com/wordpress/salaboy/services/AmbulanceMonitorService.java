@@ -4,45 +4,28 @@
  */
 package com.wordpress.salaboy.services;
 
+import java.io.IOException;
+
+import org.kie.api.KieBase;
+import org.kie.api.KieBaseConfiguration;
+import org.kie.api.KieServices;
+import org.kie.api.builder.KieBuilder;
+import org.kie.api.builder.KieFileSystem;
+import org.kie.api.builder.Message;
+import org.kie.api.builder.Results;
+import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieSession;
+import org.kie.internal.io.ResourceFactory;
+
 import com.wordpress.salaboy.model.events.EmergencyVehicleEvent;
 import com.wordpress.salaboy.model.events.PulseEvent;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.io.IOUtils;
-import org.drools.KnowledgeBase;
-import org.drools.KnowledgeBaseConfiguration;
-import org.drools.KnowledgeBaseFactoryService;
-import org.drools.builder.KnowledgeBuilder;
-import org.drools.builder.KnowledgeBuilderError;
-import org.drools.builder.KnowledgeBuilderErrors;
-import org.drools.builder.KnowledgeBuilderFactoryService;
-import org.drools.builder.ResourceType;
-import org.drools.conf.EventProcessingOption;
-import org.drools.grid.ConnectionFactoryService;
-import org.drools.grid.GridConnection;
-import org.drools.grid.GridNode;
-import org.drools.grid.GridServiceDescription;
-import org.drools.grid.conf.GridPeerServiceConfiguration;
-import org.drools.grid.conf.impl.GridPeerConfiguration;
-import org.drools.grid.impl.GridImpl;
-import org.drools.grid.service.directory.Address;
-import org.drools.grid.service.directory.WhitePages;
-import org.drools.grid.service.directory.impl.CoreServicesLookupConfiguration;
-import org.drools.grid.service.directory.impl.GridServiceDescriptionImpl;
-import org.drools.grid.service.directory.impl.WhitePagesRemoteConfiguration;
-import org.drools.io.impl.ByteArrayResource;
-import org.drools.io.impl.ClassPathResource;
-import org.drools.runtime.StatefulKnowledgeSession;
 
 /**
  * @author esteban
  */
 public class AmbulanceMonitorService implements VehicleMonitorService {
 
-    private StatefulKnowledgeSession session;
+    private KieSession session;
     private Thread sessionThread;
 
     public AmbulanceMonitorService() {
@@ -72,11 +55,11 @@ public class AmbulanceMonitorService implements VehicleMonitorService {
     @Override
     public void vehicleRemoved() {
         session.dispose();
-        sessionThread.stop();
+        sessionThread.interrupt();
     }
 
     public void newHeartBeatReceived(PulseEvent event) {
-        session.getWorkingMemoryEntryPoint("patientHeartbeats").insert(event);
+        session.getEntryPoint("patientHeartbeats").insert(event);
     }
     
     @Override
@@ -86,54 +69,25 @@ public class AmbulanceMonitorService implements VehicleMonitorService {
         }
     }
 
-    private StatefulKnowledgeSession createAmbulanceMonitorSession(String vehicleId) throws IOException {
-        Map<String, GridServiceDescription> coreServicesMap = new HashMap<String, GridServiceDescription>();
-        GridServiceDescriptionImpl gsd = new GridServiceDescriptionImpl(WhitePages.class.getName());
-        Address addr = gsd.addAddress("socket");
-        addr.setObject(new InetSocketAddress[]{new InetSocketAddress("localhost", 8000)});
-        coreServicesMap.put(WhitePages.class.getCanonicalName(), gsd);
-
-        GridImpl grid = new GridImpl(new ConcurrentHashMap<String, Object>());
-
-        GridPeerConfiguration conf = new GridPeerConfiguration();
-        GridPeerServiceConfiguration coreSeviceConf = new CoreServicesLookupConfiguration(coreServicesMap);
-        conf.addConfiguration(coreSeviceConf);
-
-        GridPeerServiceConfiguration wprConf = new WhitePagesRemoteConfiguration();
-        conf.addConfiguration(wprConf);
-
-        conf.configure(grid);
-
-        GridServiceDescription<GridNode> n1Gsd = grid.get(WhitePages.class).lookup("n1");
-        GridConnection<GridNode> conn = grid.get(ConnectionFactoryService.class).createConnection(n1Gsd);
-        GridNode remoteN1 = conn.connect();
-
-
-        KnowledgeBuilder kbuilder = remoteN1.get(KnowledgeBuilderFactoryService.class).newKnowledgeBuilder();
-
-        //kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/patient.drl").getInputStream())), ResourceType.DRL);
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/patient.dsl").getInputStream())), ResourceType.DSL);
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/patient.dslr").getInputStream())), ResourceType.DSLR);
-
-        KnowledgeBuilderErrors errors = kbuilder.getErrors();
-        if (errors != null && errors.size() > 0) {
-            for (KnowledgeBuilderError error : errors) {
-                System.out.println(">>>>>>> Error: " + error.getMessage());
-
-            }
-            throw new IllegalStateException("Failed to parse knowledge!");
+    private KieSession createAmbulanceMonitorSession(String vehicleId) throws IOException {
+    	
+    	KieServices ks = KieServices.Factory.get();
+    	KieFileSystem kfs = ks.newKieFileSystem();
+    	//kfs.write("src/main/resources/patient.drl", ResourceFactory.newClassPathResource("rules/patient.drl"));
+    	kfs.write("src/main/resources/patient.dsl", ResourceFactory.newClassPathResource("rules/patient.dsl"));
+    	kfs.write("src/main/resources/patient.dslr", ResourceFactory.newClassPathResource("rules/patient.dslr"));
+    	KieBuilder kbuilder = ks.newKieBuilder(kfs);
+    	kbuilder.buildAll();
+        Results res = kbuilder.getResults();
+        if (res != null && res.hasMessages(Message.Level.ERROR)) {
+            System.out.println(">>>>>>> Error: " + res);
+            throw new IllegalStateException("Failesd to parse knowledge!");
         }
-        KnowledgeBaseConfiguration kbaseConf = remoteN1.get(KnowledgeBaseFactoryService.class).newKnowledgeBaseConfiguration();
-        kbaseConf.setOption(EventProcessingOption.STREAM);
-        KnowledgeBase kbase = remoteN1.get(KnowledgeBaseFactoryService.class).newKnowledgeBase(kbaseConf);
-
-
-        kbase.addKnowledgePackages(kbuilder.getKnowledgePackages());
-
-        StatefulKnowledgeSession session = kbase.newStatefulKnowledgeSession();
-
-        remoteN1.set("AmbulanceMonitorSession" + vehicleId, session);
-
+        KieBaseConfiguration kbaseConf = ks.newKieBaseConfiguration();
+        kbaseConf.setOption(org.kie.api.conf.EventProcessingOption.STREAM);
+        KieContainer kcontainer = ks.newKieContainer(kbuilder.getKieModule().getReleaseId());
+        KieBase kbase = kcontainer.newKieBase(kbaseConf);
+        KieSession session = kbase.newKieSession();
         return session;
 
     }

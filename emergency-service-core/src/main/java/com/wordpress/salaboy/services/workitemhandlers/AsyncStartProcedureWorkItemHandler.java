@@ -5,20 +5,21 @@
 package com.wordpress.salaboy.services.workitemhandlers;
 
 
-import com.wordpress.salaboy.messaging.MessageFactory;
-import com.wordpress.salaboy.messaging.MessageProducer;
-import com.wordpress.salaboy.model.Call;
-import com.wordpress.salaboy.model.Emergency;
-import com.wordpress.salaboy.model.messages.AsyncProcedureStartMessage;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.drools.runtime.process.WorkItem;
-import org.drools.runtime.process.WorkItemHandler;
-import org.drools.runtime.process.WorkItemManager;
+
 import org.hornetq.api.core.HornetQException;
+import org.kie.api.runtime.process.WorkItem;
+import org.kie.api.runtime.process.WorkItemHandler;
+import org.kie.api.runtime.process.WorkItemManager;
+
+import com.wordpress.salaboy.messaging.MessageFactory;
+import com.wordpress.salaboy.model.Call;
+import com.wordpress.salaboy.model.Emergency;
+import com.wordpress.salaboy.model.messages.AsyncProcedureStartMessage;
 
 /**
  *

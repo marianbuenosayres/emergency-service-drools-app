@@ -17,6 +17,7 @@ import com.wordpress.salaboy.model.serviceclient.*;
 import com.wordpress.salaboy.context.tracking.*;
 import com.wordpress.salaboy.model.serviceclient.PersistenceServiceProvider.PersistenceServiceType;
 
+import accumulate com.wordpress.salaboy.acc.HospitalDistanceCalculator hospitalDistanceCalculator;
 
 query "getPatient"
     //@TODO add more filters per process/emergency

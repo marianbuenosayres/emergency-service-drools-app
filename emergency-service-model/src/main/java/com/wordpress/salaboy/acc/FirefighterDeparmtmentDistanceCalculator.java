@@ -5,13 +5,15 @@
 
 package com.wordpress.salaboy.acc;
 
-import com.wordpress.salaboy.model.Emergency;
-import com.wordpress.salaboy.model.FirefightersDepartment;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
-import org.drools.runtime.rule.AccumulateFunction;
+
+import org.kie.api.runtime.rule.AccumulateFunction;
+
+import com.wordpress.salaboy.model.Emergency;
+import com.wordpress.salaboy.model.FirefightersDepartment;
 
 /**
  *
@@ -81,5 +83,10 @@ public class FirefighterDeparmtmentDistanceCalculator implements AccumulateFunct
     public boolean supportsReverse() {
         return false;
     }
+
+	@Override
+	public Class<?> getResultType() {
+		return FirefightersDepartment.class;
+	}
 
 }

@@ -5,45 +5,29 @@
 
 package com.wordpress.salaboy.services;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.jbpm.services.task.wih.NonManagedLocalHTWorkItemHandler;
+import org.kie.api.KieBase;
+import org.kie.api.KieBaseConfiguration;
+import org.kie.api.KieServices;
+import org.kie.api.builder.KieBuilder;
+import org.kie.api.builder.KieFileSystem;
+import org.kie.api.builder.Message;
+import org.kie.api.builder.Results;
+import org.kie.api.conf.EventProcessingOption;
+import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.rule.EntryPoint;
+import org.kie.internal.io.ResourceFactory;
+
 import com.wordpress.salaboy.model.Call;
 import com.wordpress.salaboy.model.ProcedureCompleted;
 import com.wordpress.salaboy.model.events.AllProceduresEndedEvent;
 import com.wordpress.salaboy.services.workitemhandlers.AsyncStartProcedureWorkItemHandler;
 import com.wordpress.salaboy.workitemhandlers.MyReportingWorkItemHandler;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.io.IOUtils;
-import org.drools.KnowledgeBase;
-import org.drools.KnowledgeBaseConfiguration;
-import org.drools.KnowledgeBaseFactoryService;
-import org.drools.builder.KnowledgeBuilder;
-import org.drools.builder.KnowledgeBuilderError;
-import org.drools.builder.KnowledgeBuilderErrors;
-import org.drools.builder.KnowledgeBuilderFactoryService;
-import org.drools.builder.ResourceType;
-import org.drools.conf.EventProcessingOption;
-import org.drools.grid.ConnectionFactoryService;
-import org.drools.grid.GridConnection;
-import org.drools.grid.GridNode;
-import org.drools.grid.GridServiceDescription;
-import org.drools.grid.conf.GridPeerServiceConfiguration;
-import org.drools.grid.conf.impl.GridPeerConfiguration;
-import org.drools.grid.impl.GridImpl;
-import org.drools.grid.service.directory.Address;
-import org.drools.grid.service.directory.WhitePages;
-import org.drools.grid.service.directory.impl.CoreServicesLookupConfiguration;
-import org.drools.grid.service.directory.impl.GridServiceDescriptionImpl;
-import org.drools.grid.service.directory.impl.WhitePagesRemoteConfiguration;
-import org.drools.io.impl.ByteArrayResource;
-import org.drools.io.impl.ClassPathResource;
-import org.drools.runtime.StatefulKnowledgeSession;
-import org.drools.runtime.rule.WorkingMemoryEntryPoint;
-import org.jbpm.task.service.hornetq.CommandBasedHornetQWSHumanTaskHandler;
 
 /**
  *
@@ -51,7 +35,7 @@ import org.jbpm.task.service.hornetq.CommandBasedHornetQWSHumanTaskHandler;
  */
 public class GenericEmergencyProcedureImpl implements GenericEmergencyProcedure {
     private static GenericEmergencyProcedureImpl instance;
-    private StatefulKnowledgeSession genericEmergencySession;
+    private KieSession genericEmergencySession;
     private GenericEmergencyProcedureImpl() {
         configure();
         setWorkItemHandlers();
@@ -65,8 +49,8 @@ public class GenericEmergencyProcedureImpl implements GenericEmergencyProcedure 
         return instance;
     }
 
-    private WorkingMemoryEntryPoint getPhoneCallsEntryPoint(){
-        return genericEmergencySession.getWorkingMemoryEntryPoint("phoneCalls stream");
+    private EntryPoint getPhoneCallsEntryPoint(){
+        return genericEmergencySession.getEntryPoint("phoneCalls stream");
     }
     
     @Override
@@ -75,66 +59,35 @@ public class GenericEmergencyProcedureImpl implements GenericEmergencyProcedure 
         getPhoneCallsEntryPoint().insert(call);
     }
     
-    private StatefulKnowledgeSession createGenericEmergencyServiceSession() throws IOException{
-        Map<String, GridServiceDescription> coreServicesMap = new HashMap<String, GridServiceDescription>();
-        GridServiceDescriptionImpl gsd = new GridServiceDescriptionImpl(WhitePages.class.getName());
-        Address addr = gsd.addAddress("socket");
-        addr.setObject(new InetSocketAddress[]{new InetSocketAddress("localhost", 8000)});
-        coreServicesMap.put(WhitePages.class.getCanonicalName(), gsd);
+    private KieSession createGenericEmergencyServiceSession() throws IOException{
 
-        GridImpl grid = new GridImpl(new ConcurrentHashMap<String, Object>());
-
-        GridPeerConfiguration conf = new GridPeerConfiguration();
-        GridPeerServiceConfiguration coreSeviceConf = new CoreServicesLookupConfiguration(coreServicesMap);
-        conf.addConfiguration(coreSeviceConf);
+    	KieServices ks = KieServices.Factory.get();
+        KieFileSystem kfs = ks.newKieFileSystem();
+        kfs.write("src/main/resources/emergency-proc.bpmn2", ResourceFactory.newClassPathResource("processes/procedures/GenericEmergencyProcedure.bpmn"));
+        kfs.write("src/main/resources/phoneCallsManagement.drl", ResourceFactory.newClassPathResource("rules/phoneCallsManagement.drl"));
+        kfs.write("src/main/resources/procedureSuggestions.drl", ResourceFactory.newClassPathResource("rules/procedureSuggestions.drl"));
+        kfs.write("src/main/resources/emergencyLifeCycle.drl", ResourceFactory.newClassPathResource("rules/emergencyLifeCycle.drl"));
+        KieBuilder kbuilder = ks.newKieBuilder(kfs);
+        kbuilder.buildAll();
         
-        GridPeerServiceConfiguration wprConf = new WhitePagesRemoteConfiguration();
-        conf.addConfiguration(wprConf);
-
-        conf.configure(grid);
-
-        GridServiceDescription<GridNode> n1Gsd = grid.get(WhitePages.class).lookup("n1");
-        GridConnection<GridNode> conn = grid.get(ConnectionFactoryService.class).createConnection(n1Gsd);
-        GridNode remoteN1 = conn.connect();
-
-        
-        KnowledgeBuilder kbuilder = remoteN1.get(KnowledgeBuilderFactoryService.class).newKnowledgeBuilder();
-
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("processes/procedures/GenericEmergencyProcedure.bpmn").getInputStream())), ResourceType.BPMN2);
-
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/phoneCallsManagement.drl").getInputStream())), ResourceType.DRL);
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/procedureSuggestions.drl").getInputStream())), ResourceType.DRL);
-        kbuilder.add(new ByteArrayResource(IOUtils.toByteArray(new ClassPathResource("rules/emergencyLifeCycle.drl").getInputStream())), ResourceType.DRL);
-        
-        KnowledgeBuilderErrors errors = kbuilder.getErrors();
-        if (errors != null && errors.size() > 0) {
-            for (KnowledgeBuilderError error : errors) {
-                if (error == null){
-                    System.out.println(">>>>>>> Error: Unkown error!");
-                }else{
-                    System.out.println(">>>>>>> Error: " + error.getMessage());
-                }
-
-            }
+        Results res = kbuilder.getResults();
+        if (res != null && res.hasMessages(Message.Level.ERROR)) {
+            System.out.println(">>>>>>> Error: " + res);
             throw new IllegalStateException("Failed to parse knowledge!");
         }
 
-        KnowledgeBaseConfiguration kbaseConf = remoteN1.get(KnowledgeBaseFactoryService.class).newKnowledgeBaseConfiguration();
+        KieBaseConfiguration kbaseConf = ks.newKieBaseConfiguration();
         kbaseConf.setOption(EventProcessingOption.STREAM);
-        KnowledgeBase kbase = remoteN1.get(KnowledgeBaseFactoryService.class).newKnowledgeBase(kbaseConf);
-
-        kbase.addKnowledgePackages(kbuilder.getKnowledgePackages());
-
-        StatefulKnowledgeSession session = kbase.newStatefulKnowledgeSession();
-
-        remoteN1.set("phoneCallsManagementSession", session);
- 
+        KieContainer kcontainer = ks.newKieContainer(kbuilder.getKieModule().getReleaseId());
+        KieBase kbase = kcontainer.newKieBase(kbaseConf);
+        KieSession session = kbase.newKieSession();
         return session;
         
     }
 
     private void setWorkItemHandlers() {
-        genericEmergencySession.getWorkItemManager().registerWorkItemHandler("Human Task", new CommandBasedHornetQWSHumanTaskHandler(genericEmergencySession));
+        genericEmergencySession.getWorkItemManager().registerWorkItemHandler("Human Task", 
+        		new NonManagedLocalHTWorkItemHandler(genericEmergencySession,HumanTaskServerService.getInstance().getTaskService()));
         genericEmergencySession.getWorkItemManager().registerWorkItemHandler("Start Procedure", new AsyncStartProcedureWorkItemHandler());
         genericEmergencySession.getWorkItemManager().registerWorkItemHandler("Reporting", new MyReportingWorkItemHandler());
         

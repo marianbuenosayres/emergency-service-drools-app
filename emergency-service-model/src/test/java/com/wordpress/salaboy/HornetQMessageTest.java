@@ -4,26 +4,26 @@
  */
 package com.wordpress.salaboy;
 
-import com.wordpress.salaboy.messaging.MessageConsumer;
-import com.wordpress.salaboy.messaging.MessageFactory;
-import com.wordpress.salaboy.messaging.MessageProducer;
-import com.wordpress.salaboy.messaging.MessageServerSingleton;
-import org.drools.KnowledgeBase;
-import org.drools.KnowledgeBaseFactory;
-import org.drools.builder.KnowledgeBuilder;
-import org.drools.builder.KnowledgeBuilderFactory;
-import org.drools.builder.ResourceType;
-import org.drools.io.impl.ByteArrayResource;
-import org.drools.runtime.StatefulKnowledgeSession;
+import org.drools.core.io.impl.ByteArrayResource;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.server.HornetQServer;
-import org.jgroups.protocols.MFC;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.kie.api.io.ResourceType;
+import org.kie.internal.KnowledgeBase;
+import org.kie.internal.KnowledgeBaseFactory;
+import org.kie.internal.builder.KnowledgeBuilder;
+import org.kie.internal.builder.KnowledgeBuilderFactory;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
+
+import com.wordpress.salaboy.messaging.MessageConsumer;
+import com.wordpress.salaboy.messaging.MessageFactory;
+import com.wordpress.salaboy.messaging.MessageProducer;
+import com.wordpress.salaboy.messaging.MessageServerSingleton;
 
 /**
  *

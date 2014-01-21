@@ -21,6 +21,8 @@
             <groupId>slick</groupId>
             <artifactId>slick</artifactId>
             <version>274</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/slick.jar</systemPath>
         </dependency>  
     </dependencies>
     

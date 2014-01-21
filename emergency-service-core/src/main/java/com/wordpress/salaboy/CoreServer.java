@@ -10,23 +10,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.drools.SystemEventListenerFactory;
-import org.drools.grid.ConnectionFactoryService;
-import org.drools.grid.Grid;
-import org.drools.grid.GridConnection;
-import org.drools.grid.GridNode;
-import org.drools.grid.GridServiceDescription;
-import org.drools.grid.SocketService;
-import org.drools.grid.conf.GridPeerServiceConfiguration;
-import org.drools.grid.conf.impl.GridPeerConfiguration;
-import org.drools.grid.impl.GridImpl;
-import org.drools.grid.impl.MultiplexSocketServerImpl;
-import org.drools.grid.io.impl.MultiplexSocketServiceCongifuration;
-import org.drools.grid.remote.mina.MinaAcceptorFactoryService;
-import org.drools.grid.service.directory.WhitePages;
-import org.drools.grid.service.directory.impl.CoreServicesLookupConfiguration;
-import org.drools.grid.service.directory.impl.WhitePagesLocalConfiguration;
-import org.drools.grid.timer.impl.CoreServicesSchedulerConfiguration;
 import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.server.WrappingNeoServerBootstrapper;
 import org.neo4j.server.configuration.Configurator;
@@ -55,11 +38,6 @@ public class CoreServer {
     private static PersistenceService persistenceService;
     private static ContextTrackingService trackingService;
 
-    protected Map<String, GridServiceDescription> coreServicesMap = new HashMap<String, GridServiceDescription>();
-    protected static Grid grid;
-    protected static GridNode remoteN1;
-    
-    
     private Map<String,Boolean> vehicleHitEmergency = new HashMap<String, Boolean> ();
     private Map<String,Boolean> vehicleHitHospital = new HashMap<String, Boolean> ();
     
@@ -106,8 +84,6 @@ public class CoreServer {
                 try {
                     System.out.println("Stopping Core Server ... ");
                     MessageServerSingleton.getInstance().stop();
-                    remoteN1.dispose();
-                    grid.get(SocketService.class).close();
                     HumanTaskServerService.getInstance().stopTaskServer();
                     System.out.println("Core Server Stopped! ");
                     coreServer.stopWorkers();
@@ -137,9 +113,6 @@ public class CoreServer {
 
         MessageServerSingleton.getInstance().start();
 
-
-        //Starting Grid View
-        createRemoteNode();
         //Starting Human Task Server
         HumanTaskServerService.getInstance().initTaskServer();
         
@@ -416,55 +389,5 @@ public class CoreServer {
             vehicleHitsFireDepartmentWorker.stopWorker();
         }
         
-    }
-
-    protected void createRemoteNode() {
-        grid = new GridImpl(new HashMap<String, Object>());
-        configureGrid1(grid,
-                8000,
-                null);
-
-
-        GridNode n1 = grid.createGridNode("n1");
-        grid.get(SocketService.class).addService("n1", 8000, n1);
-
-        GridServiceDescription<GridNode> n1Gsd = grid.get(WhitePages.class).lookup("n1");
-        GridConnection<GridNode> conn = grid.get(ConnectionFactoryService.class).createConnection(n1Gsd);
-        remoteN1 = conn.connect();
-
-    }
-
-    private void configureGrid1(Grid grid,
-            int port,
-            WhitePages wp) {
-
-        //Local Grid Configuration, for our client
-        GridPeerConfiguration conf = new GridPeerConfiguration();
-
-        //Configuring the Core Services White Pages
-        GridPeerServiceConfiguration coreSeviceWPConf = new CoreServicesLookupConfiguration(coreServicesMap);
-        conf.addConfiguration(coreSeviceWPConf);
-
-        //Configuring the Core Services Scheduler
-        GridPeerServiceConfiguration coreSeviceSchedulerConf = new CoreServicesSchedulerConfiguration();
-        conf.addConfiguration(coreSeviceSchedulerConf);
-
-        //Configuring the WhitePages 
-        WhitePagesLocalConfiguration wplConf = new WhitePagesLocalConfiguration();
-        wplConf.setWhitePages(wp);
-        conf.addConfiguration(wplConf);
-
-        if (port >= 0) {
-            //Configuring the SocketService
-            MultiplexSocketServiceCongifuration socketConf = new MultiplexSocketServiceCongifuration(new MultiplexSocketServerImpl("127.0.0.1",
-                    new MinaAcceptorFactoryService(),
-                    SystemEventListenerFactory.getSystemEventListener(),
-                    grid));
-            socketConf.addService(WhitePages.class.getName(), wplConf.getWhitePages(), port);
-
-            conf.addConfiguration(socketConf);
-        }
-        conf.configure(grid);
-
     }
 }

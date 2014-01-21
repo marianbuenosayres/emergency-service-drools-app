@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.wordpress.salaboy.emergencyservice</groupId>
         <artifactId>emergency-service</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>0.601Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>emergency-service-core</artifactId>
@@ -30,8 +30,8 @@
         <!-- Drools Dependencies -->
         
         <dependency>
-            <groupId>org.drools</groupId>
-            <artifactId>knowledge-api</artifactId>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-api</artifactId>
             <type>jar</type>
         </dependency>
         
@@ -52,12 +52,12 @@
         </dependency>
 
         <dependency>
-            <groupId>org.drools</groupId>
-            <artifactId>drools-grid-impl</artifactId>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-camel</artifactId>
         </dependency>
         <!--dependency>
-            <groupId>org.drools</groupId>
-            <artifactId>drools-spring</artifactId>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-spring</artifactId>
         </dependency-->
 
         <!-- jBPM5 Dependencies -->
@@ -79,7 +79,7 @@
         </dependency>
         <dependency>
             <groupId>org.jbpm</groupId>
-            <artifactId>jbpm-bam</artifactId>
+            <artifactId>jbpm-audit</artifactId>
         </dependency>
 
 
@@ -205,25 +205,16 @@
             <version>1.0.3</version>
         </dependency>
         <dependency>
-            <groupId>com.wordpress.salaboy.smarttasks</groupId>
-            <artifactId>smart-tasks-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
+            <groupId>org.jbpm</groupId>
+            <artifactId>jbpm-human-task-core</artifactId>
             <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>com.wordpress.salaboy.smarttasks</groupId>
-            <artifactId>smart-tasks-jbpm5-impl</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
-            <type>jar</type>
+            <version>${kie.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jbpm</groupId>
-            <artifactId>jbpm-human-task</artifactId>
+            <artifactId>jbpm-human-task-workitems</artifactId>
             <type>jar</type>
-            <version>5.2.0-SNAPSHOT</version>
-            
+            <version>${kie.version}</version>
         </dependency>
     </dependencies>
     <build>
