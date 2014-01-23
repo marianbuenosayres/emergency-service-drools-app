@@ -13,7 +13,7 @@
         <hornetq.version>2.2.2.Final</hornetq.version>
         <infinispan.version>4.2.1.FINAL</infinispan.version>
         <netty.version>3.2.0.Final</netty.version>
-        <lwjgl.version>2.6</lwjgl.version>
+        <lwjgl.version>2.8.2</lwjgl.version>
     </properties>
 
     <modules>

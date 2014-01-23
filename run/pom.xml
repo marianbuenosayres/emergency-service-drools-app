@@ -35,6 +35,8 @@
                         <configuration>
                             <executable>java</executable>
                             <arguments>
+                                <!-- debug configuration -->
+                                <argument>-agentlib:jdwp=transport=dt_socket,suspend=n,server=y,address=localhost:7777</argument>
                                 <!-- mac osx for infinispan -->
                                 <argument>-Djgroups.bind_addr=127.0.0.1</argument>
                                 <argument>-Djava.net.preferIPv4Stack=true</argument>
@@ -100,6 +102,7 @@
             </activation>
             <properties>
                 <platform>mac</platform>
+                <sofolder>i386</sofolder>
             </properties>
         </profile>
         <profile>
@@ -120,7 +123,7 @@
                                     <groupId>org.lwjgl</groupId>
                                     <artifactId>lwjgl-native</artifactId>
                                     <version>${lwjgl.version}</version>
-                                    <classifier>linux64</classifier>
+                                    <!--classifier>linux64</classifier-->
                                     <outputDirectory>${native.path}</outputDirectory>
                                     <overWrite>false</overWrite>
                                 </artifactItem>
@@ -142,7 +145,7 @@
                                         <property name="jar_path" value="${org.lwjgl:lwjgl:jar}"/>
                                         <echo message="Classpath: ${ant_clpath}"/>
                                         <delete file="${ant_clpath}/liblwjgl.so"/>
-                                        <symlink link="${ant_clpath}/liblwjgl.so" resource="${ant_clpath}/liblwjgl64.so"/>
+                                        <symlink link="${ant_clpath}/liblwjgl.so" resource="${ant_clpath}/linux/liblwjgl64.so"/>
                                     </target>
                                 </configuration>
                                 <goals>
@@ -195,10 +198,15 @@
                 <dependency>
                     <groupId>slick</groupId>
                     <artifactId>slick</artifactId>
-                    <version>234</version>
+                    <!--version>234</version-->
+                    <version>275-GEMSERK</version>
                 </dependency>
             </dependencies>
             <repositories>
+                <repository>
+                    <id>adterrass-repo</id>
+                    <url>http://adterrasperaspera.com/lwjgl/</url>
+                </repository>
                 <repository>
                     <id>b2s-repo</id>
                     <url>http://b2s-repo.googlecode.com/svn/trunk/mvn-repo</url>
@@ -362,6 +370,12 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
+        </repository>
+
+        <repository>
+            <id>gemserk-maven-repo</id>
+            <name>gemserk-maven-repo</name>
+            <url>http://gemserk-maven-repo.googlecode.com/svn/maven/thirdparty/</url>
         </repository>
 
         <repository>

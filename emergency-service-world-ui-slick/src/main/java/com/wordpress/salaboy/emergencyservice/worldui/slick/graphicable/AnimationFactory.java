@@ -241,6 +241,12 @@ public class AnimationFactory {
         return menuBarSprite;
     }
 
+	public static void initEmergencySpriteSheets() {
+		getEmergencySpriteSheet(EmergencyType.FIRE);
+		getEmergencySpriteSheet(EmergencyType.HEART_ATTACK);
+		getEmergencySpriteSheet(EmergencyType.UNDEFINED);
+	}
+    
     private static SpriteSheet getEmergencySpriteSheet(EmergencyType type) {
         if (!emergencySprites.containsKey(type)) {
             try {

@@ -22,7 +22,8 @@
             <artifactId>slick</artifactId>
             <version>274</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/lib/slick.jar</systemPath>
+            <!--systemPath>${project.basedir}/lib/slick.jar</systemPath-->
+            <systemPath>${project.basedir}/lib/slick-275-GEMSERK.jar</systemPath>
         </dependency>  
     </dependencies>
     

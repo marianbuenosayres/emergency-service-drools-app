@@ -64,7 +64,7 @@ public class DefaultFireProcedureSmartTasksRestTest extends DefaultFireProcedure
 
         taskClientConf.addHumanTaskClientConfiguration("jBPM5-HT-Client",
                 new JBPM5HornetQHumanTaskClientConfiguration(
-                "127.0.0.1", 5446));
+                "127.0.0.1", 5153));
 
       
 

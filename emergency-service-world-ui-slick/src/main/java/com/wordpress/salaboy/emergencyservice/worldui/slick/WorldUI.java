@@ -78,6 +78,7 @@ public class WorldUI extends BasicGame {
         AnimationFactory.getAmbulanceSpriteSheet();
         AnimationFactory.getFireTruckSpriteSheet();
         AnimationFactory.getPoliceCarSpriteSheet();
+        AnimationFactory.initEmergencySpriteSheets();
         
         gc.getInput().addKeyListener(new WorldKeyListener(this));
         gc.getInput().addMouseListener(new WorldMouseListener(this));

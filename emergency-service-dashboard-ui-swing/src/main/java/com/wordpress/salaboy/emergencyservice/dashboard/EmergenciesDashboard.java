@@ -265,7 +265,10 @@ public class EmergenciesDashboard extends javax.swing.JFrame {
 
         private void liveReportjButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_liveReportjButtonActionPerformed
 
-        openLiveReportPanel((String) emergenciesjTable.getModel().getValueAt(emergenciesjTable.getSelectedRow(), 0));
+        	if (emergenciesjTable.getSelectedRow() != -1) {
+	       		openLiveReportPanel((String) emergenciesjTable.getModel().getValueAt(emergenciesjTable.getSelectedRow(), 0));
+        	}
+        	
     }
         // TODO add your handling code here:         int[] selected = emergenciesjTable.getSelectedRows();          List<String> selectedEmergencies = new ArrayList<String>(selected.length);          for (int i = 0; i < selected.length; i++) {             selectedEmergencies.add((String) emergenciesjTable.getModel().getValueAt(i, 0));         }          openLiveReportPanel(selectedEmergencies);     }//GEN-LAST:event_liveReportjButtonActionPerformed
 

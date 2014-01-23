@@ -40,7 +40,7 @@ public class DefaultHeartAttackProcedureSmartTasksTest extends DefaultHeartAttac
         super.setUp();
 
         HumanTaskServiceConfiguration taskClientConf = new HumanTaskServiceConfiguration();
-        taskClientConf.addHumanTaskClientConfiguration("jBPM5-HT-Client", new JBPM5HornetQHumanTaskClientConfiguration("127.0.0.1", 5446));
+        taskClientConf.addHumanTaskClientConfiguration("jBPM5-HT-Client", new JBPM5HornetQHumanTaskClientConfiguration("127.0.0.1", 5153));
         humanTaskServiceClient = HumanTaskServiceFactory.newHumanTaskService(taskClientConf);
         humanTaskServiceClient.initializeService();
       

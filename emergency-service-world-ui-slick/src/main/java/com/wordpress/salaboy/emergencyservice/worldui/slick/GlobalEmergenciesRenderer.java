@@ -4,15 +4,19 @@
  */
 package com.wordpress.salaboy.emergencyservice.worldui.slick;
 
-import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableEmergency;
-import com.wordpress.salaboy.model.Emergency;
 import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.swing.JOptionPane;
+
 import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.Graphics;
 import org.newdawn.slick.Input;
+
+import com.wordpress.salaboy.emergencyservice.worldui.slick.graphicable.GraphicableEmergency;
+import com.wordpress.salaboy.model.Emergency;
 
 /**
  *
@@ -46,6 +50,7 @@ public class GlobalEmergenciesRenderer implements EmergencyRenderer {
 
     @Override
     public void onKeyPressed(int code, char key) {
+        System.out.println(">>> onKeyPressed: " + key);
         try {
             if (Input.KEY_SPACE == code) {
                 this.ui.addRandomGenericEmergency();
@@ -64,10 +69,12 @@ public class GlobalEmergenciesRenderer implements EmergencyRenderer {
 
     @Override
     public void onKeyReleased(int code, char key) {
+    	System.out.println(">>> onKeyReleased: " + key);
     }
 
     @Override
     public void onClick(int button, int x, int y, int count) {
+        System.out.println("onClick: " + x + ", " + y);
         if (Input.MOUSE_LEFT_BUTTON == button) {
             for (Entry<String, GraphicableEmergency> entry : ui.getEmergencies().entrySet()) {
                 if (entry.getValue().getPolygon().contains(x, y)) {
@@ -76,9 +83,37 @@ public class GlobalEmergenciesRenderer implements EmergencyRenderer {
                     return;
                 }
             }
+        } else if (Input.MOUSE_RIGHT_BUTTON == button) {
+        	String item = showEmergencyDialog(x, y);
+        	try {
+                if ("New random generic emergency".equals(item)) {
+                	System.out.println(">> New random generic emergency");
+                	ui.addRandomGenericEmergency();
+                } else if ("New Fire emergency".equals(item)) {
+                	System.out.println(">> New Fire emergency");
+                	ui.addRandomEmergency(Emergency.EmergencyType.FIRE, 10);
+                } else if ("New emergencies at points [2,1][2,2]".equals(item)) {
+                	System.out.println(">> New emergency");
+                	ui.addXYEmergency(2,1);
+                	ui.addXYEmergency(2,2);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(GlobalEmergenciesRenderer.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
-
+    
+    private String showEmergencyDialog(int x, int y) {
+    	Object val = JOptionPane.showInputDialog(null, "Emergency to create:", 
+    			"New Emergency", 
+    			1, null, new Object[] {
+    				"New random generic emergency",
+    				"New Fire emergency",
+    				"New emergency at this point"
+    			}, "New random generic emergency");
+    	return val == null ? null : val.toString();
+    }
+    
     @Override
     public void update(GameContainer gc, int delta) {
     }
