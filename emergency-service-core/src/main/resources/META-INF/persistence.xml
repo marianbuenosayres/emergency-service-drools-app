@@ -4,10 +4,24 @@ http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistenc
     <persistence-unit name="org.drools.persistence.jpa" transaction-type="JTA">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <jta-data-source>jdbc/testDS1</jta-data-source>
+
+
+        <mapping-file>META-INF/JBPMorm.xml</mapping-file>
+        <mapping-file>META-INF/Taskorm.xml</mapping-file>
+        <mapping-file>META-INF/ProcessInstanceInfo.hbm.xml</mapping-file>
+        
         <class>org.drools.persistence.info.SessionInfo</class>
         <class>org.jbpm.persistence.processinstance.ProcessInstanceInfo</class>
-        <class>org.jbpm.persistence.processinstance.ProcessInstanceEventInfo</class>
         <class>org.drools.persistence.info.WorkItemInfo</class>
+
+
+
+
+
+        <!--class>org.drools.persistence.info.SessionInfo</class>
+        <class>org.jbpm.persistence.processinstance.ProcessInstanceInfo</class>
+        <class>org.jbpm.persistence.processinstance.ProcessInstanceEventInfo</class>
+        <class>org.drools.persistence.info.WorkItemInfo</class-->
         <class>org.jbpm.task.Attachment</class>
         <class>org.jbpm.task.Content</class>
         <class>org.jbpm.task.BooleanExpression</class>
@@ -57,6 +71,9 @@ http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistenc
     </persistence-unit>
     <persistence-unit name="org.jbpm.task">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
+
+        <mapping-file>META-INF/Taskorm.xml</mapping-file>
+
         <class>org.jbpm.task.Attachment</class>
         <class>org.jbpm.task.Content</class>
         <class>org.jbpm.task.BooleanExpression</class>

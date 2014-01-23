@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.wordpress.salaboy.emergencyservice</groupId>
         <artifactId>emergency-service</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <artifactId>emergency-service-run</artifactId>
@@ -64,6 +64,7 @@
             </activation>
             <properties>
                 <platform>win</platform>
+                <sofolder>i386</sofolder>
             </properties>
         </profile>
         <profile>
@@ -75,6 +76,7 @@
             </activation>
             <properties>
                 <platform>linux32</platform>
+                <sofolder>i386</sofolder>
             </properties>
         </profile>
         <profile>
@@ -86,6 +88,7 @@
             </activation>
             <properties>
                 <platform>linux64</platform>
+                <sofolder>amd64</sofolder>
             </properties>
         </profile>
         <profile>
@@ -105,7 +108,7 @@
                 <native.path>${project.build.directory}/natives</native.path>
             </properties>
             <build>
-                <defaultGoal>dependency:unpack exec:exec</defaultGoal>
+                <defaultGoal>dependency:unpack antrun:run exec:exec</defaultGoal>
                 <plugins>
                     <!--get slick native lib -->
                     <plugin>
@@ -117,12 +120,36 @@
                                     <groupId>org.lwjgl</groupId>
                                     <artifactId>lwjgl-native</artifactId>
                                     <version>${lwjgl.version}</version>
-                                    <classifier>${platform}</classifier>
+                                    <classifier>linux64</classifier>
                                     <outputDirectory>${native.path}</outputDirectory>
                                     <overWrite>false</overWrite>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
+                    </plugin>
+                    <!--debug -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <id>default-cli</id>
+                                <phase>antrun</phase>
+                                <configuration>
+                                    <target>
+                                        <property name="ant_clpath" value="${native.path}"/>
+                                        <property name="jar_path" value="${org.lwjgl:lwjgl:jar}"/>
+                                        <echo message="Classpath: ${ant_clpath}"/>
+                                        <delete file="${ant_clpath}/liblwjgl.so"/>
+                                        <symlink link="${ant_clpath}/liblwjgl.so" resource="${ant_clpath}/liblwjgl64.so"/>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                     <!--run -->
                     <plugin>
@@ -130,13 +157,14 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
                             <executable>java</executable>
+                            <environmentVariables>
+                              <LD_LIBRARY_PATH>${java.home}/lib/${sofolder}</LD_LIBRARY_PATH>
+                            </environmentVariables>
                             <arguments>
                                 <!-- mac osx for infinispan -->
                                 <argument>-Djgroups.bind_addr=127.0.0.1</argument>
                                 <argument>-Djava.net.preferIPv4Stack=true</argument>
-                               
-                                <argument>-Djava.library.path=${native.path}/</argument>
-                                <!--<argument>-d32</argument> -->
+                                <argument>-Dorg.lwjgl.librarypath=${native.path}</argument>
                                 <argument>-classpath</argument>
                                 <classpath />
                                 <argument>com.wordpress.salaboy.emergencyservice.worldui.slick.WorldUI</argument>
@@ -151,6 +179,10 @@
                     <artifactId>emergency-service-world-ui-slick</artifactId>
                 </dependency>
                 <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>emergency-service-model</artifactId>
+                </dependency>
+                <dependency>
                     <groupId>org.lwjgl</groupId>
                     <artifactId>lwjgl</artifactId>
                     <version>${lwjgl.version}</version>
@@ -159,6 +191,11 @@
                     <groupId>org.lwjgl</groupId>
                     <artifactId>lwjgl-jinput</artifactId>
                     <version>${lwjgl.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>slick</groupId>
+                    <artifactId>slick</artifactId>
+                    <version>234</version>
                 </dependency>
             </dependencies>
             <repositories>
@@ -244,7 +281,7 @@
                         <configuration>
                             <executable>java</executable>
                             <arguments>
-                                <argument>-d32</argument>
+                                <!--argument>-d32</argument-->
                                 <argument>-classpath</argument>
                                 <classpath />
                                 <argument>com.wordpress.salaboy.sensor.ui.MainFrame</argument>
@@ -347,6 +384,15 @@
             <id>PlugTree</id>
             <name>PlugTree-Snapshots-CloudBees</name>
             <url>https://repository-plugtree-org.forge.cloudbees.com/snapshot/</url>
+            <!--snapshots -->
+            <!--enabled>true</enabled -->
+            <!--updatePolicy>always</updatePolicy -->
+            <!--/snapshots -->
+        </repository>
+        <repository>
+            <id>PlugTreeLabs</id>
+            <name>PlugTreeLabs</name>
+            <url>http://www.plugtree.com/artifactory/plugtree-labs/</url>
             <!--snapshots -->
             <!--enabled>true</enabled -->
             <!--updatePolicy>always</updatePolicy -->

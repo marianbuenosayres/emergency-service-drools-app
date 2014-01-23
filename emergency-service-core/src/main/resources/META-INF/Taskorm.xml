@@ -15,8 +15,8 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
@@ -24,12 +24,14 @@ select
      t.taskData.processSessionId)
 from
     Task t 
-    left join t.taskData.createdBy    
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner             
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity businessAdministrator
 where
+    t.archived = 0 and
     businessAdministrator.id = :userId and
     businessAdministrator in elements ( t.peopleAssignments.businessAdministrators  )  and
 
@@ -64,8 +66,8 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
@@ -73,12 +75,14 @@ select
      t.taskData.processSessionId)
 from
     Task t 
-    left join t.taskData.createdBy
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner 
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity excludedOwners
 where
+    t.archived = 0 and
     excludedOwners.id = :userId and
     excludedOwners in elements ( t.peopleAssignments.excludedOwners  )  and
 
@@ -113,8 +117,8 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
@@ -122,13 +126,14 @@ select
      t.taskData.processSessionId)
 from
     Task t
-    left join t.taskData.createdBy
-    left join t.taskData.actualOwner
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity potentialOwners
 where
+    t.archived = 0 and
     potentialOwners.id = :userId and
     potentialOwners in elements ( t.peopleAssignments.potentialOwners  )  and
 
@@ -153,6 +158,59 @@ where
           </query>
           <!-- hint name="org.hibernate.timeout" value="200"/ -->
       </named-query>
+      <named-query name="TasksAssignedAsPotentialOwnerByStatus">
+          <query>
+select
+     new org.jbpm.task.query.TaskSummary(
+     t.id,
+     t.taskData.processInstanceId,
+     name.text,
+     subject.text,
+     description.text,
+     t.taskData.status,
+     t.priority,
+     t.taskData.skipable,
+     actualOwner,
+     createdBy,
+     t.taskData.createdOn,
+     t.taskData.activationTime,
+     t.taskData.expirationTime,
+     t.taskData.processId,
+     t.taskData.processSessionId)
+from
+    Task t
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner
+    left join t.subjects as subject
+    left join t.descriptions as description
+    left join t.names as name,
+    OrganizationalEntity potentialOwners
+where
+    t.archived = 0 and
+    potentialOwners.id = :userId and
+    potentialOwners in elements ( t.peopleAssignments.potentialOwners  )  and
+
+    (
+    name.language = :language
+    or t.names.size = 0
+    ) and
+
+    (
+    subject.language = :language
+    or t.subjects.size = 0
+    ) and
+
+    (
+    description.language = :language
+    or t.descriptions.size = 0
+    ) and
+
+    t.taskData.status in (:status) and
+
+    t.taskData.expirationTime is null
+          </query>
+          <!-- hint name="org.hibernate.timeout" value="200"/ -->
+      </named-query>
             <named-query name="TasksAssignedAsPotentialOwnerWithGroups">
           <query>
 select
@@ -165,22 +223,23 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
      t.taskData.processId,
      t.taskData.processSessionId)
 from
-    Task t 
-    left join t.taskData.createdBy 
-    left join t.taskData.actualOwner
+    Task t
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity potentialOwners
 where
+    t.archived = 0 and
     ( potentialOwners.id = :userId or potentialOwners.id in (:groupIds) ) and
     potentialOwners in elements ( t.peopleAssignments.potentialOwners )  and
 
@@ -205,7 +264,59 @@ where
           </query>
           <!-- hint name="org.hibernate.timeout" value="200"/ -->
       </named-query>
+ <named-query name="TasksAssignedAsPotentialOwnerByStatusWithGroups">
+          <query>
+select
+     new org.jbpm.task.query.TaskSummary(
+     t.id,
+     t.taskData.processInstanceId,
+     name.text,
+     subject.text,
+     description.text,
+     t.taskData.status,
+     t.priority,
+     t.taskData.skipable,
+     actualOwner,
+     createdBy,
+     t.taskData.createdOn,
+     t.taskData.activationTime,
+     t.taskData.expirationTime,
+     t.taskData.processId,
+     t.taskData.processSessionId)
+from
+    Task t
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner
+    left join t.subjects as subject
+    left join t.descriptions as description
+    left join t.names as name,
+    OrganizationalEntity potentialOwners
+where
+    t.archived = 0 and
+    ( potentialOwners.id = :userId or potentialOwners.id in (:groupIds) ) and
+    potentialOwners in elements ( t.peopleAssignments.potentialOwners )  and
 
+    (
+    name.language = :language
+    or t.names.size = 0
+    ) and
+
+    (
+    subject.language = :language
+    or t.subjects.size = 0
+    ) and
+
+    (
+    description.language = :language
+    or t.descriptions.size = 0
+    ) and
+
+    t.taskData.status in (:status) and
+
+    t.taskData.expirationTime is null
+          </query>
+          <!-- hint name="org.hibernate.timeout" value="200"/ -->
+      </named-query>
        <named-query name="TasksAssignedAsPotentialOwnerByGroup">
           <query>
 select
@@ -218,22 +329,23 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
      t.taskData.processId,
      t.taskData.processSessionId)
 from
-    Task t 
-    left join t.taskData.createdBy 
-    left join t.taskData.actualOwner
+    Task t
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity potentialOwners
 where
+    t.archived = 0 and
     potentialOwners.id = :groupId and
     potentialOwners in elements ( t.peopleAssignments.potentialOwners  )  and
 
@@ -258,7 +370,6 @@ where
           </query>
           <!-- hint name="org.hibernate.timeout" value="200"/ -->
       </named-query>
-
       <named-query name="SubTasksAssignedAsPotentialOwner">
           <query>
 select
@@ -271,22 +382,23 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
      t.taskData.processId,
      t.taskData.processSessionId)
 from
-    Task t 
-    left join t.taskData.createdBy 
-    left join t.taskData.actualOwner
+    Task t
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity potentialOwners
 where
+    t.archived = 0 and
     t.taskData.parentId = :parentId and
     potentialOwners.id = :userId and
     potentialOwners in elements ( t.peopleAssignments.potentialOwners  )  and
@@ -325,8 +437,8 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
@@ -334,10 +446,13 @@ select
      t.taskData.processSessionId)
 from
     Task t
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name
 where
+    t.archived = 0 and
     t.taskData.parentId = :parentId and
     
     (
@@ -375,8 +490,8 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
@@ -384,12 +499,14 @@ select
      t.taskData.processSessionId)
 from
     Task t 
-    left join t.taskData.createdBy
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner 
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity recipients
 where
+    t.archived = 0 and
     recipients.id = :userId and
     recipients in elements ( t.peopleAssignments.recipients  )  and
 
@@ -424,8 +541,8 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
@@ -433,12 +550,14 @@ select
      t.taskData.processSessionId)
 from
     Task t 
-    left join t.taskData.createdBy
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner           
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity taskInitiator
 where
+    t.archived = 0 and
     taskInitiator.id = :userId and
     taskInitiator = t.peopleAssignments.taskInitiator and
 
@@ -473,8 +592,8 @@ select
      t.taskData.status,
      t.priority,
      t.taskData.skipable,
-     t.taskData.actualOwner,
-     t.taskData.createdBy,
+     actualOwner,
+     createdBy,
      t.taskData.createdOn,
      t.taskData.activationTime,
      t.taskData.expirationTime,
@@ -482,12 +601,14 @@ select
      t.taskData.processSessionId)
 from
     Task t 
-    left join t.taskData.createdBy
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner           
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name,
     OrganizationalEntity taskStakeholder
 where
+    t.archived = 0 and
     taskStakeholder.id = :userId and
     taskStakeholder in elements ( t.peopleAssignments.taskStakeholders  )  and
 
@@ -522,8 +643,8 @@ select
     t.taskData.status,
     t.priority,
     t.taskData.skipable,
-    t.taskData.actualOwner,
-    t.taskData.createdBy,
+    actualOwner,
+    createdBy,
     t.taskData.createdOn,
     t.taskData.activationTime,
     t.taskData.expirationTime,
@@ -531,11 +652,13 @@ select
     t.taskData.processSessionId)
 from
     Task t 
-    left join t.taskData.createdBy
+    left join t.taskData.createdBy as createdBy
+    left join t.taskData.actualOwner as actualOwner 
     left join t.subjects as subject
     left join t.descriptions as description
     left join t.names as name
 where
+    t.archived = 0 and
     t.taskData.actualOwner.id = :userId and
 
     (
@@ -557,6 +680,259 @@ where
           </query>
           <!-- hint name="org.hibernate.timeout" value="200"/ -->
       </named-query>
+    <named-query name="TasksByStatus">
+        <query>
+            select
+            new org.jbpm.task.query.TaskSummary(
+            t.id,
+            t.taskData.processInstanceId,
+            name.text,
+            subject.text,
+            description.text,
+            t.taskData.status,
+            t.priority,
+            t.taskData.skipable,
+            actualOwner,
+            createdBy,
+            t.taskData.createdOn,
+            t.taskData.activationTime,
+            t.taskData.expirationTime,
+            t.taskData.processId,
+            t.taskData.processSessionId)
+            from
+            Task t 
+            left join t.taskData.createdBy as createdBy
+            left join t.taskData.actualOwner as actualOwner 
+            left join t.subjects as subject
+            left join t.descriptions as description
+            left join t.names as name
+            where
+            t.archived = 0 and
+            t.taskData.status = :status and
+
+            (
+            name.language = :language
+            or t.names.size = 0
+            ) and
+
+            (
+            subject.language = :language
+            or t.subjects.size = 0
+            ) and
+
+            (
+            description.language = :language
+            or t.descriptions.size = 0
+            ) and
+
+            t.taskData.expirationTime is null
+        </query>
+          <!-- hint name="org.hibernate.timeout" value="200"/ -->
+    </named-query>
+    <named-query name="TasksByStatusByProcessId">
+        <query>
+            select
+            new org.jbpm.task.query.TaskSummary(
+            t.id,
+            t.taskData.processInstanceId,
+            name.text,
+            subject.text,
+            description.text,
+            t.taskData.status,
+            t.priority,
+            t.taskData.skipable,
+            actualOwner,
+            createdBy,
+            t.taskData.createdOn,
+            t.taskData.activationTime,
+            t.taskData.expirationTime,
+            t.taskData.processId,
+            t.taskData.processSessionId)
+            from
+            Task t 
+            left join t.taskData.actualOwner as actualOwner            
+            left join t.taskData.createdBy as createdBy
+            left join t.subjects as subject
+            left join t.descriptions as description
+            left join t.names as name
+            where
+            t.archived = 0 and
+            t.taskData.processInstanceId = :processInstanceId and
+            (
+            name.language = :language
+            or t.names.size = 0
+            ) and
+
+            (
+            subject.language = :language
+            or t.subjects.size = 0
+            ) and
+
+            (
+            description.language = :language
+            or t.descriptions.size = 0
+            ) and
+
+            t.taskData.status in (:status) and
+
+            t.taskData.expirationTime is null
+        </query>
+          <!-- hint name="org.hibernate.timeout" value="200"/ -->
+    </named-query>
+    <named-query name="TasksByStatusByProcessIdByTaskName">
+        <query>
+            select
+            new org.jbpm.task.query.TaskSummary(
+            t.id,
+            t.taskData.processInstanceId,
+            name.text,
+            subject.text,
+            description.text,
+            t.taskData.status,
+            t.priority,
+            t.taskData.skipable,
+            actualOwner,
+            createdBy,
+            t.taskData.createdOn,
+            t.taskData.activationTime,
+            t.taskData.expirationTime,
+            t.taskData.processId,
+            t.taskData.processSessionId)
+            from
+            Task t
+            left join t.taskData.actualOwner as actualOwner
+            left join t.taskData.createdBy as createdBy
+            left join t.subjects as subject
+            left join t.descriptions as description
+            left join t.names as name
+            where
+            t.archived = 0 and
+            t.taskData.processInstanceId = :processInstanceId and
+            name.shortText = :taskName and
+            (
+            name.language = :language
+            or t.names.size = 0
+            ) and
+
+            (
+            subject.language = :language
+            or t.subjects.size = 0
+            ) and
+
+            (
+            description.language = :language
+            or t.descriptions.size = 0
+            ) and
+
+            t.taskData.status in (:status) and
+
+            t.taskData.expirationTime is null
+        </query>
+          <!-- hint name="org.hibernate.timeout" value="200"/ -->
+    </named-query>
+    <named-query name="TasksByStatusSince">
+        <query>
+            select
+            new org.jbpm.task.query.TaskSummary(
+            t.id,
+            t.taskData.processInstanceId,
+            name.text,
+            subject.text,
+            description.text,
+            t.taskData.status,
+            t.priority,
+            t.taskData.skipable,
+            actualOwner,
+            createdBy,
+            t.taskData.createdOn,
+            t.taskData.activationTime,
+            t.taskData.expirationTime,
+            t.taskData.processId,
+            t.taskData.processSessionId)
+            from
+            Task t 
+            left join t.taskData.createdBy as createdBy
+            left join t.taskData.actualOwner as actualOwner 
+            left join t.subjects as subject
+            left join t.descriptions as description
+            left join t.names as name
+            where
+            t.archived = 0 and
+            t.taskData.status = :status and
+            
+            (
+            name.language = :language
+            or t.names.size = 0
+            ) and
+
+            (
+            subject.language = :language
+            or t.subjects.size = 0
+            ) and
+
+            (
+            description.language = :language
+            or t.descriptions.size = 0
+            ) and
+
+            t.taskData.expirationTime is null 
+    
+            and
+    
+            t.taskData.activationTime &lt; :since
+        </query>
+          <!-- hint name="org.hibernate.timeout" value="200"/ -->
+    </named-query>
+      
+    <named-query name="ArchivedTasks">
+        <query>
+            select
+            new org.jbpm.task.query.TaskSummary(
+            t.id,
+            t.taskData.processInstanceId,
+            name.text,
+            subject.text,
+            description.text,
+            t.taskData.status,
+            t.priority,
+            t.taskData.skipable,
+            actualOwner,
+            createdBy,
+            t.taskData.createdOn,
+            t.taskData.activationTime,
+            t.taskData.expirationTime,
+            t.taskData.processId,
+            t.taskData.processSessionId)
+            from
+            Task t 
+            left join t.taskData.createdBy as createdBy
+            left join t.taskData.actualOwner as actualOwner 
+            left join t.subjects as subject
+            left join t.descriptions as description
+            left join t.names as name
+            where
+            t.archived = 1 and
+
+            (
+            name.language = :language
+            or t.names.size = 0
+            ) and
+
+            (
+            subject.language = :language
+            or t.subjects.size = 0
+            ) and
+
+            (
+            description.language = :language
+            or t.descriptions.size = 0
+            ) and
+
+            t.taskData.expirationTime is null
+        </query>
+          <!-- hint name="org.hibernate.timeout" value="200"/ -->
+    </named-query>
+
 	  <named-query name="UnescalatedDeadlines">
           <query>
 select
@@ -568,8 +944,9 @@ from
     Task t,
     Deadline d
 where
+    t.archived = 0 and
     (d in elements( t.deadlines.startDeadlines ) or d in elements( t.deadlines.endDeadlines ) ) and
-    d.escalated = false
+    d.escalated = 0
 order by
     d.date
           </query>
@@ -582,6 +959,7 @@ select
 from
     Task t
 where
+    t.archived = 0 and
     t.taskData.workItemId = :workItemId
           </query>
           <!-- hint name="org.hibernate.timeout" value="200"/ -->
